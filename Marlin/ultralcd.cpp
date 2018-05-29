@@ -178,8 +178,8 @@ uint16_t max_display_update_time = 0;
   void lcd_control_menu();
   void lcd_control_temperature_menu();
   void lcd_control_motion_menu();
-
-  #if DISABLED(SLIM_LCD_MENUS)
+  
+	#if DISABLED(SLIM_LCD_MENUS)
     void lcd_control_temperature_preheat_material1_settings_menu();
     void lcd_control_temperature_preheat_material2_settings_menu();
   #endif
@@ -187,6 +187,11 @@ uint16_t max_display_update_time = 0;
   #if DISABLED(NO_VOLUMETRICS) || ENABLED(ADVANCED_PAUSE_FEATURE)
     void lcd_control_filament_menu();
   #endif
+
+  void lcd_control_filament_menu();
+  void lcd_auto_home();
+  //void lcd_z_offset();
+  void lcd_grid_bed_leveling();
 
   #if ENABLED(LCD_INFO_MENU)
     #if ENABLED(PRINTCOUNTER)
@@ -2668,12 +2673,19 @@ void lcd_quick_feedback(const bool clear_buttons) {
     //
     // Auto Home
     //
-    MENU_ITEM(gcode, MSG_AUTO_HOME, PSTR("G28"));
+    /*MENU_ITEM(gcode, MSG_AUTO_HOME, PSTR("G28"));
     #if ENABLED(INDIVIDUAL_AXIS_HOMING_MENU)
       MENU_ITEM(gcode, MSG_AUTO_HOME_X, PSTR("G28 X"));
       MENU_ITEM(gcode, MSG_AUTO_HOME_Y, PSTR("G28 Y"));
       MENU_ITEM(gcode, MSG_AUTO_HOME_Z, PSTR("G28 Z"));
     #endif
+    */
+    MENU_ITEM(submenu, MSG_AUTO_HOME, lcd_auto_home);
+
+    //
+    // Z Offset
+    //
+    //MENU_ITEM(submenu, MSG_ZPROBE_ZOFFSET, lcd_z_offset);
 
     //
     // TMC Z Calibration
@@ -2694,12 +2706,14 @@ void lcd_quick_feedback(const bool clear_buttons) {
       #if ENABLED(PROBE_MANUALLY)
         if (!g29_in_progress)
       #endif
-          MENU_ITEM(submenu, MSG_BED_LEVELING, lcd_bed_leveling);
+
+      MENU_ITEM(submenu, MSG_BED_LEVELING, lcd_bed_leveling);
 
     #elif HAS_LEVELING && DISABLED(SLIM_LCD_MENUS)
 
       #if DISABLED(PROBE_MANUALLY)
-        MENU_ITEM(gcode, MSG_LEVEL_BED, PSTR("G28\nG29"));
+        //MENU_ITEM(gcode, MSG_LEVEL_BED, PSTR("G28\nG29"));
+				MENU_ITEM(submenu, MSG_BED_LEVELING, lcd_grid_bed_leveling);
       #endif
       if (leveling_is_valid()) {
         bool new_level_state = planner.leveling_active;
@@ -2720,7 +2734,8 @@ void lcd_quick_feedback(const bool clear_buttons) {
       //
       // Set Home Offsets
       //
-      MENU_ITEM(function, MSG_SET_HOME_OFFSETS, lcd_set_home_offsets);
+      //MENU_ITEM(function, MSG_SET_HOME_OFFSETS, lcd_set_home_offsets); //RootCNC
+      MENU_ITEM(gcode, MSG_SET_ORIGIN, PSTR("G92 X0 Y0 Z0")); //RootCNC
     #endif
 
     //
@@ -2763,8 +2778,8 @@ void lcd_quick_feedback(const bool clear_buttons) {
         MENU_ITEM(submenu, MSG_PREHEAT_1, lcd_preheat_m1_menu);
         MENU_ITEM(submenu, MSG_PREHEAT_2, lcd_preheat_m2_menu);
       #else
-        MENU_ITEM(function, MSG_PREHEAT_1, lcd_preheat_m1_e0_only);
-        MENU_ITEM(function, MSG_PREHEAT_2, lcd_preheat_m2_e0_only);
+        //MENU_ITEM(function, MSG_PREHEAT_1, lcd_preheat_m1_e0_only); //RootCNC
+        //MENU_ITEM(function, MSG_PREHEAT_2, lcd_preheat_m2_e0_only); //RootCNC
       #endif
 
     #endif // HAS_TEMP_HOTEND
@@ -2802,6 +2817,66 @@ void lcd_quick_feedback(const bool clear_buttons) {
       MENU_ITEM(submenu, MSG_DELTA_CALIBRATE, lcd_delta_calibrate_menu);
     #endif
 
+    END_MENU();
+  }
+
+  
+  void lcd_auto_home() {
+      START_MENU();
+      MENU_BACK(MSG_PREPARE);
+
+      MENU_ITEM(gcode, "Home All", PSTR("G28"));
+      MENU_ITEM(gcode, "Home XY", PSTR("G28 X Y"));
+      MENU_ITEM(gcode, "Home Z", PSTR("G28 Z"));
+      
+      END_MENU();
+  }
+
+  /*void lcd_z_offset(){
+      if (lcd_clicked) { return lcd_goto_previous_menu(); }
+      ENCODER_DIRECTION_NORMAL();
+      if (encoderPosition) {
+        refresh_cmd_timeout();
+        const float scale = 0.1;
+        //For each step on the knob /hole step = 4
+        //if(encoderPosition % 4 == 0 && home_offset[Z_AXIS] + float((int32_t)encoderPosition) * scale >= 0){ //Only allow positive offset
+        if(home_offset[Z_AXIS] + float((int32_t)encoderPosition) * scale >= 0){ //Only allow positive offset
+          home_offset[Z_AXIS] += float((int32_t)encoderPosition) * scale;
+          current_position[Z_AXIS] += float((int32_t)encoderPosition) * scale;
+          encoderPosition = 0;
+        }
+        
+        lcdDrawUpdate = LCDVIEW_REDRAW_NOW;
+      }
+      if (lcdDrawUpdate) lcd_implementation_drawedit(PSTR("Offset [mm]"), ftostr32(home_offset[Z_AXIS]));
+
+  }*/
+
+
+
+  int16_t gbl_workarea_x = X_BED_SIZE/2;
+  int16_t gbl_workarea_y = Y_BED_SIZE/2;
+  int16_t gbl_workarea_division = 100;
+  
+  void _lcd_grid_bed_leveling_generate(){
+
+    char leveling_command[35];
+    //snprintf_P(leveling_command, sizeof(leveling_command), PSTR("G29 X%i Y%i L0 R%i F0 B%i T V4"), (int16_t) floor(gbl_workarea_x/gbl_workarea_division), (int16_t) floor(gbl_workarea_y/gbl_workarea_division), (int16_t) gbl_workarea_x, (int16_t) gbl_workarea_y);
+    snprintf_P(leveling_command, sizeof(leveling_command), PSTR("G29 L0 R%i F0 B%i T V4"), (int16_t) gbl_workarea_x, (int16_t) gbl_workarea_y);
+    enqueue_and_echo_command(leveling_command);
+
+  }
+  
+  void lcd_grid_bed_leveling(){
+    START_MENU();
+    MENU_BACK(MSG_PREPARE);
+
+    ENCODER_DIRECTION_NORMAL();
+    MENU_ITEM_EDIT(int3, "W.Area X [mm]", &gbl_workarea_x, 10, X_BED_SIZE);
+    MENU_ITEM_EDIT(int3, "W.Area Y [mm]", &gbl_workarea_y, 10, Y_BED_SIZE);
+    //MENU_ITEM_EDIT(int3, "W.Division [mm]", &gbl_workarea_division, 1, min(gbl_workarea_x, gbl_workarea_y));
+    MENU_ITEM(function, "Probe bed", _lcd_grid_bed_leveling_generate);
+    
     END_MENU();
   }
 
@@ -3331,7 +3406,7 @@ void lcd_quick_feedback(const bool clear_buttons) {
   void lcd_control_menu() {
     START_MENU();
     MENU_BACK(MSG_MAIN);
-    MENU_ITEM(submenu, MSG_TEMPERATURE, lcd_control_temperature_menu);
+    //MENU_ITEM(submenu, MSG_TEMPERATURE, lcd_control_temperature_menu); //RootCNC
     MENU_ITEM(submenu, MSG_MOTION, lcd_control_motion_menu);
 
     #if DISABLED(NO_VOLUMETRICS) || ENABLED(ADVANCED_PAUSE_FEATURE)

@@ -14656,6 +14656,8 @@ void setup() {
   #if ENABLED(USE_WATCHDOG)
     watchdog_init();
   #endif
+
+  LOOP_XYZ(i) axis_known_position[i] = axis_homed[i] = true;
 }
 
 /**
