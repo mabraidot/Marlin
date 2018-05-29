@@ -1421,6 +1421,7 @@ void lcd_quick_feedback(const bool clear_buttons) {
     // Nozzle:
     // Nozzle [1-4]:
     //
+    /*
     #if HOTENDS == 1
       MENU_MULTIPLIER_ITEM_EDIT_CALLBACK(int3, MSG_NOZZLE, &thermalManager.target_temperature[0], 0, HEATER_0_MAXTEMP - 15, watch_temp_callback_E0);
     #else // HOTENDS > 1
@@ -1436,7 +1437,7 @@ void lcd_quick_feedback(const bool clear_buttons) {
         #endif // HOTENDS > 3
       #endif // HOTENDS > 2
     #endif // HOTENDS > 1
-
+    */
     //
     // Bed:
     //
@@ -1472,6 +1473,7 @@ void lcd_quick_feedback(const bool clear_buttons) {
     // Flow:
     // Flow [1-5]:
     //
+    /*
     #if EXTRUDERS == 1
       MENU_ITEM_EDIT_CALLBACK(int3, MSG_FLOW, &planner.flow_percentage[0], 10, 999, _lcd_refresh_e_factor_0);
     #else // EXTRUDERS > 1
@@ -1488,7 +1490,7 @@ void lcd_quick_feedback(const bool clear_buttons) {
         #endif // EXTRUDERS > 3
       #endif // EXTRUDERS > 2
     #endif // EXTRUDERS > 1
-
+    */
     //
     // Babystep X:
     // Babystep Y:
@@ -3338,6 +3340,7 @@ void lcd_quick_feedback(const bool clear_buttons) {
 
     #endif
 
+
     #if ENABLED(SWITCHING_EXTRUDER) || ENABLED(SWITCHING_NOZZLE)
 
       // Only the current...
@@ -3352,7 +3355,7 @@ void lcd_quick_feedback(const bool clear_buttons) {
     #else
 
       // Independent extruders with one E-stepper per hotend
-      MENU_ITEM(submenu, MSG_MOVE_E, lcd_move_get_e_amount);
+      /*MENU_ITEM(submenu, MSG_MOVE_E, lcd_move_get_e_amount);
       #if E_MANUAL > 1
         MENU_ITEM(submenu, MSG_MOVE_E MSG_MOVE_E1, lcd_move_get_e0_amount);
         MENU_ITEM(submenu, MSG_MOVE_E MSG_MOVE_E2, lcd_move_get_e1_amount);
@@ -3365,7 +3368,7 @@ void lcd_quick_feedback(const bool clear_buttons) {
             #endif // E_MANUAL > 4
           #endif // E_MANUAL > 3
         #endif // E_MANUAL > 2
-      #endif // E_MANUAL > 1
+      #endif // E_MANUAL > 1*/
 
     #endif
 
@@ -3729,6 +3732,7 @@ void lcd_quick_feedback(const bool clear_buttons) {
         #endif // E_STEPPERS > 3
       #endif // E_STEPPERS > 2
     #endif
+    
 
     void _planner_refresh_positioning() { planner.refresh_positioning(); }
     #if ENABLED(DISTINCT_E_FACTORS)
@@ -3740,6 +3744,7 @@ void lcd_quick_feedback(const bool clear_buttons) {
       }
       void _planner_refresh_e0_positioning() { _planner_refresh_e_positioning(0); }
       void _planner_refresh_e1_positioning() { _planner_refresh_e_positioning(1); }
+
       #if E_STEPPERS > 2
         void _planner_refresh_e2_positioning() { _planner_refresh_e_positioning(2); }
         #if E_STEPPERS > 3
@@ -3750,7 +3755,7 @@ void lcd_quick_feedback(const bool clear_buttons) {
         #endif // E_STEPPERS > 3
       #endif // E_STEPPERS > 2
     #endif
-
+    
     // M203 / M205 Velocity options
     void lcd_control_motion_velocity_menu() {
       START_MENU();
