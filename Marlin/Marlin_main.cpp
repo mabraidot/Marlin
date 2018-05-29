@@ -14538,6 +14538,8 @@ void setup() {
     delay(1000);
     WRITE(LCD_PINS_RS, HIGH);
   #endif
+
+  LOOP_XYZ(i) axis_known_position[i] = axis_homed[i] = true;
 }
 
 /**
