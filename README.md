@@ -1,4 +1,4 @@
-# Marlin 3D Printer Firmware
+# Marlin 3D Printer Firmware for RootCNC
 <img align="right" src="../../raw/1.1.x/buildroot/share/pixmaps/logo/marlin-250.png" />
 
 Marlin is an optimized firmware for [RepRap 3D printers](http://reprap.org/) based on the [Arduino](https://www.arduino.cc/) platform. First created in 2011 for RepRap and Ultimaker printers, today Marlin drives a majority of the world's most popular 3D printers. Marlin delivers outstanding print quality with unprecedented control over the process.
@@ -14,10 +14,6 @@ The 1.1.x branch is home to all tagged releases of Marlin 1.1 (final version 1.1
 This branch will receive no further updates. All future development —including all bug fixes— will take place in the [`bugfix-2.0.x`](https://github.com/MarlinFirmware/Marlin/tree/bugfix-2.0.x) branch, which will also serve as the root for all future Marlin development. Be sure to test [`bugfix-2.0.x`](https://github.com/MarlinFirmware/Marlin/tree/bugfix-2.0.x) before reporting any bugs you find in 1.1.9.
 
 Marlin 1.1.9 is the final release of the 8-bit flat version of Marlin Firmware. A monumental amount of talent and effort has gone into its production, and thanks are due to many people around the world. Throughout Marlin 1.1 development we worked closely with the community, contributors, vendors, host developers, library developers, etc. to improve the quality, configurability, and compatibility of Marlin Firmware, all while continuing to support a wide variety of Arduino-based boards.
-
-## Marlin 1.0.x
-
-Previous releases of Marlin include [1.0.2-2](https://github.com/MarlinFirmware/Marlin/tree/1.0.2-2) (December 2016) and [1.0.1](https://github.com/MarlinFirmware/Marlin/tree/1.0.1) (December 2014). Any version of Marlin prior to 1.0.1 (when we started tagging versions) can be collectively referred to as Marlin 1.0.0.
 
 ## Contributing to Marlin
 
