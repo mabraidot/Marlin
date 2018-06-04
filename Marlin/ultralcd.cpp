@@ -2828,7 +2828,8 @@ void lcd_quick_feedback(const bool clear_buttons) {
       MENU_BACK(MSG_PREPARE);
 
       MENU_ITEM(gcode, "Home All", PSTR("G28"));
-      MENU_ITEM(gcode, "Home XY", PSTR("G28 X Y"));
+      MENU_ITEM(gcode, "Home X", PSTR("G28 X"));
+      MENU_ITEM(gcode, "Home Y", PSTR("G28 Y"));
       MENU_ITEM(gcode, "Home Z", PSTR("G28 Z"));
       
       END_MENU();
