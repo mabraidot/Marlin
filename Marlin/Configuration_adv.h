@@ -1356,6 +1356,15 @@
 #define CNC_COORDINATE_SYSTEMS
 
 /**
+ * CNC Tool changing
+ *
+ * Enables Tnn command to perform a tool change, parking the spindle and 
+ * waiting for the user confirmation, then probes Z for the new tool and
+ * apply the offset.
+ */
+#define CNC_MANUAL_TOOL_CHANGE
+
+/**
  * M43 - display pin status, watch pins for changes, watch endstops & toggle LED, Z servo probe test, toggle pins
  */
 //#define PINS_DEBUGGING
