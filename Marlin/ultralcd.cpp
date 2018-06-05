@@ -177,6 +177,7 @@ uint16_t max_display_update_time = 0;
   void lcd_auto_home();
   //void lcd_z_offset();
   void lcd_grid_bed_leveling();
+  void lcd_manual_tool_change();
 
   #if ENABLED(LCD_INFO_MENU)
     #if ENABLED(PRINTCOUNTER)
@@ -2581,6 +2582,11 @@ void kill_screen(const char* lcd_msg) {
       //
       //MENU_ITEM(function, MSG_SET_HOME_OFFSETS, lcd_set_home_offsets); //RootCNC
       MENU_ITEM(gcode, MSG_SET_ORIGIN, PSTR("G92 X0 Y0 Z0")); //RootCNC
+
+      //
+      // Set Home Offsets
+      //
+      MENU_ITEM(submenu, "Tool Change", lcd_manual_tool_change);
     #endif
 
     //
@@ -2717,6 +2723,35 @@ void kill_screen(const char* lcd_msg) {
     
     END_MENU();
   }
+
+
+
+  void _manual_tool_change_park(){
+      char cmd[20];
+      sprintf_P(cmd, PSTR("G1 X0 Y0 Z%s"), ftostr32(current_position[Z_AXIS]+10));
+      enqueue_and_echo_command(cmd);
+  }
+  
+  void _manual_tool_change_finish(){
+      char cmd[15];
+      sprintf_P(cmd, PSTR("M206 Z%s"), ftostr32(-1*(current_position[Z_AXIS]-Z_CLEARANCE_BETWEEN_PROBES)));
+      enqueue_and_echo_command(cmd);
+  }
+
+  void lcd_manual_tool_change(){
+    START_MENU();
+    MENU_BACK(MSG_PREPARE);
+
+    ENCODER_DIRECTION_NORMAL();
+    
+    MENU_ITEM(function, "1. Park tool", _manual_tool_change_park);
+    MENU_ITEM(gcode, "2. Probe Z new tool", PSTR("G30"));
+    MENU_ITEM(function, "3. Set new Z", _manual_tool_change_finish);
+    MENU_ITEM(gcode, "4. Finish", PSTR("M420 S1"));
+    
+    END_MENU();
+  }
+
 
   float move_menu_scale;
 
