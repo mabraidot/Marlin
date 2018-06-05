@@ -11730,18 +11730,23 @@ void cnc_tool_change(const uint8_t tmp_extruder, const float fr_mm_s/*=0.0*/, bo
               SERIAL_ECHOLNPGM("(3) Pause and wait for the manual tool change ");
             #endif
             // Perform a pause and wait for the user to click on the LCD
+            LCD_MESSAGEPGM("Change tool. Put Z probe and click");
+            enqueue_and_echo_commands_P(PSTR("M0"));
 
             // STEP 4
             #if ENABLED(DEBUG_LEVELING_FEATURE)
               SERIAL_ECHOLNPGM("(4) Probe for the new Z0 of the new tool");
             #endif
-            // Perform a G30
+            enqueue_and_echo_commands_P(PSTR("G30"));
+            stepper.synchronize();
 
             // STEP 5
             #if ENABLED(DEBUG_LEVELING_FEATURE)
               SERIAL_ECHOLNPGM("(5) Applying Z-offset for the new tool");
             #endif
-            // Perform a M206 Z( -1 * (current_position[Z_AXIS] - Z_CLEARANCE_BETWEEN_PROBES - zprobe_zoffset ) )
+            char cmd_m206[15];
+            sprintf_P(cmd_m206, PSTR("M206 Z%s"), ftostr32(-1 * (current_position[Z_AXIS] - Z_CLEARANCE_BETWEEN_PROBES - zprobe_zoffset )));
+            enqueue_and_echo_commands_P(cmd_m206);
             
           }
           else { // nomove == true
