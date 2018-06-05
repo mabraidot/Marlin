@@ -12288,15 +12288,15 @@ void cnc_tool_change(const uint8_t tmp_extruder, const float fr_mm_s/*=0.0*/, bo
 
       #else // !DUAL_X_CARRIAGE
 
-        #if ENABLED(PARKING_EXTRUDER) // Dual Parking extruder
-          const float z_diff = hotend_offset[Z_AXIS][active_extruder] - hotend_offset[Z_AXIS][tmp_extruder];
-          float z_raise = PARKING_EXTRUDER_SECURITY_RAISE;
+        #if ENABLED(CNC_PARKING_EXTRUDER) // Dual Parking extruder
+          //const float z_diff = hotend_offset[Z_AXIS][active_extruder] - hotend_offset[Z_AXIS][tmp_extruder];
+          float z_raise = CNC_PARKING_EXTRUDER_SECURITY_RAISE;
           if (!no_move) {
 
-            const float parkingposx[] = PARKING_EXTRUDER_PARKING_X,
-                        midpos = (parkingposx[0] + parkingposx[1]) * 0.5 + hotend_offset[X_AXIS][active_extruder],
-                        grabpos = parkingposx[tmp_extruder] + hotend_offset[X_AXIS][active_extruder]
-                                  + (tmp_extruder == 0 ? -(PARKING_EXTRUDER_GRAB_DISTANCE) : PARKING_EXTRUDER_GRAB_DISTANCE);
+            const float parkingposx[] = CNC_PARKING_EXTRUDER_PARKING_X;
+                        //midpos = (parkingposx[0] + parkingposx[1]) * 0.5 + hotend_offset[X_AXIS][active_extruder],
+                        //grabpos = parkingposx[tmp_extruder] + hotend_offset[X_AXIS][active_extruder]
+                        //          + (tmp_extruder == 0 ? -(CNC_PARKING_EXTRUDER_GRAB_DISTANCE) : CNC_PARKING_EXTRUDER_GRAB_DISTANCE);
             /**
              *  Steps:
              *    1. Raise Z-Axis to give enough clearance
@@ -12311,7 +12311,8 @@ void cnc_tool_change(const uint8_t tmp_extruder, const float fr_mm_s/*=0.0*/, bo
               SERIAL_ECHOLNPGM("Starting Autopark");
               if (DEBUGGING(LEVELING)) DEBUG_POS("current position:", current_position);
             #endif
-            current_position[Z_AXIS] += z_raise;
+            //current_position[Z_AXIS] += z_raise;
+            current_position[Z_AXIS] = current_position[Z_AXIS] + z_raise;
             #if ENABLED(DEBUG_LEVELING_FEATURE)
               SERIAL_ECHOLNPGM("(1) Raise Z-Axis ");
               if (DEBUGGING(LEVELING)) DEBUG_POS("Moving to Raised Z-Position", current_position);
@@ -12320,7 +12321,7 @@ void cnc_tool_change(const uint8_t tmp_extruder, const float fr_mm_s/*=0.0*/, bo
             stepper.synchronize();
 
             // STEP 2
-            current_position[X_AXIS] = parkingposx[0] + hotend_offset[X_AXIS][0];
+            current_position[X_AXIS] = parkingposx[0];// + hotend_offset[X_AXIS][0];
             #if ENABLED(DEBUG_LEVELING_FEATURE)
               SERIAL_ECHOLNPAIR("(2) Park extruder ", active_extruder);
               if (DEBUGGING(LEVELING)) DEBUG_POS("Moving ParkPos", current_position);
@@ -12352,15 +12353,8 @@ void cnc_tool_change(const uint8_t tmp_extruder, const float fr_mm_s/*=0.0*/, bo
             enqueue_and_echo_commands_P(cmd_m206);
             
           }
-          else { // nomove == true
-            // Only engage magnetic field for new extruder
-            pe_activate_magnet(tmp_extruder);
-            #if ENABLED(PARKING_EXTRUDER_SOLENOIDS_INVERT)
-              pe_activate_magnet(active_extruder); // Just save power for inverted magnets
-            #endif
-          }
 
-          current_position[Z_AXIS] -= hotend_offset[Z_AXIS][tmp_extruder] - hotend_offset[Z_AXIS][active_extruder]; // Apply Zoffset
+          //current_position[Z_AXIS] -= hotend_offset[Z_AXIS][tmp_extruder] - hotend_offset[Z_AXIS][active_extruder]; // Apply Zoffset
 
           #if ENABLED(DEBUG_LEVELING_FEATURE)
             if (DEBUGGING(LEVELING)) DEBUG_POS("Applying Z-offset", current_position);
