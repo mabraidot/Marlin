@@ -1366,7 +1366,7 @@
 #define CNC_PARKING_EXTRUDER
 #if ENABLED(CNC_PARKING_EXTRUDER)
   #define CNC_PARKING_EXTRUDER_PARKING_X { 0 }  // X positions for parking the extruders
-  #define CNC_PARKING_EXTRUDER_SECURITY_RAISE 5 // Z-raise before parking
+  #define CNC_PARKING_EXTRUDER_SECURITY_RAISE 10 // Z-raise before parking
 #endif
 
 /**

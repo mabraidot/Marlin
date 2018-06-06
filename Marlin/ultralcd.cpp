@@ -2728,15 +2728,17 @@ void kill_screen(const char* lcd_msg) {
 
   void _manual_tool_change_park(){
       char cmd[20];
-      sprintf_P(cmd, PSTR("G1 X0 Y0 Z%s"), ftostr32(current_position[Z_AXIS]+10));
+      sprintf_P(cmd, PSTR("G1 X0 Y0 Z%s"), ftostr32(current_position[Z_AXIS]+CNC_PARKING_EXTRUDER_SECURITY_RAISE));
       enqueue_and_echo_command(cmd);
   }
   
   void _manual_tool_change_finish(){
-      char cmd[15];
-      sprintf_P(cmd, PSTR("M206 Z%s"), ftostr32(-1*(current_position[Z_AXIS]-Z_CLEARANCE_BETWEEN_PROBES)));
+      char cmd[30];
+      sprintf_P(cmd, PSTR("M206 Z%s \nM420 S1"), ftostr32(-1*(current_position[Z_AXIS]-(Z_CLEARANCE_BETWEEN_PROBES-zprobe_zoffset))));
+      //sprintf_P(cmd, PSTR("G92 Z%s"), ftostr32(Z_CLEARANCE_BETWEEN_PROBES - zprobe_zoffset));
       enqueue_and_echo_command(cmd);
   }
+
 
   void lcd_manual_tool_change(){
     START_MENU();
@@ -2747,7 +2749,6 @@ void kill_screen(const char* lcd_msg) {
     MENU_ITEM(function, "1. Park tool", _manual_tool_change_park);
     MENU_ITEM(gcode, "2. Probe Z new tool", PSTR("G30"));
     MENU_ITEM(function, "3. Set new Z", _manual_tool_change_finish);
-    MENU_ITEM(gcode, "4. Finish", PSTR("M420 S1"));
     
     END_MENU();
   }
