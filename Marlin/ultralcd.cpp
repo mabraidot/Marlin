@@ -2734,7 +2734,7 @@ void kill_screen(const char* lcd_msg) {
   
   void _manual_tool_change_finish(){
       char cmd[30];
-      sprintf_P(cmd, PSTR("M206 Z%s \nM420 S1"), ftostr32(-1*(current_position[Z_AXIS]-(Z_CLEARANCE_BETWEEN_PROBES-zprobe_zoffset))));
+      sprintf_P(cmd, PSTR("M206 Z%s \nM420 S1"), ftostr32(-1.00*(current_position[Z_AXIS]-(Z_CLEARANCE_BETWEEN_PROBES-zprobe_zoffset))));
       //sprintf_P(cmd, PSTR("G92 Z%s"), ftostr32(Z_CLEARANCE_BETWEEN_PROBES - zprobe_zoffset));
       enqueue_and_echo_command(cmd);
   }
