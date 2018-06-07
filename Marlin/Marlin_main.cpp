@@ -12182,14 +12182,12 @@ void cnc_tool_change(const uint8_t tmp_extruder, const float fr_mm_s/*=0.0*/, bo
       set_destination_from_current();
 
       #if ENABLED(CNC_PARKING_EXTRUDER) // Dual Parking extruder
-        //const float z_diff = hotend_offset[Z_AXIS][active_extruder] - hotend_offset[Z_AXIS][tmp_extruder];
+        
         float z_raise = CNC_PARKING_EXTRUDER_SECURITY_RAISE;
         if (!no_move) {
-
-          const float parkingposx[] = CNC_PARKING_EXTRUDER_PARKING_X;
-                      //midpos = (parkingposx[0] + parkingposx[1]) * 0.5 + hotend_offset[X_AXIS][active_extruder],
-                      //grabpos = parkingposx[tmp_extruder] + hotend_offset[X_AXIS][active_extruder]
-                      //          + (tmp_extruder == 0 ? -(CNC_PARKING_EXTRUDER_GRAB_DISTANCE) : CNC_PARKING_EXTRUDER_GRAB_DISTANCE);
+          const float parkingposx = CNC_PARKING_EXTRUDER_PARKING_X;
+          const float parkingposy = CNC_PARKING_EXTRUDER_PARKING_Y;
+        
           /**
            *  Steps:
            *    1. Raise Z-Axis to give enough clearance
@@ -12213,8 +12211,8 @@ void cnc_tool_change(const uint8_t tmp_extruder, const float fr_mm_s/*=0.0*/, bo
           stepper.synchronize();
 
           // STEP 2
-          current_position[X_AXIS] = parkingposx[0];
-          current_position[Y_AXIS] = 0;
+          current_position[X_AXIS] = parkingposx;
+          current_position[Y_AXIS] = parkingposy;
           #if ENABLED(DEBUG_LEVELING_FEATURE)
             SERIAL_ECHOLNPAIR("(2) Park extruder ", active_extruder);
             if (DEBUGGING(LEVELING)) DEBUG_POS("Moving ParkPos", current_position);
@@ -12227,7 +12225,6 @@ void cnc_tool_change(const uint8_t tmp_extruder, const float fr_mm_s/*=0.0*/, bo
             SERIAL_ECHOLNPGM("(3) Pause and wait for the manual tool change ");
           #endif
           // Perform a pause and wait for the user to click on the LCD
-          //LCD_MESSAGEPGM("Change tool. Put Z probe and click");
           enqueue_and_echo_commands_P(PSTR("M0 Change the Tool"));
           enqueue_and_echo_commands_P(PSTR("M0 Put the Probe"));
           

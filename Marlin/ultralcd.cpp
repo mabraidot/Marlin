@@ -2892,18 +2892,19 @@ void lcd_quick_feedback(const bool clear_buttons) {
 
 
   void _manual_tool_change_park(){
-      char cmd[20];
-      sprintf_P(cmd, PSTR("G1 X0 Y0 Z%s"), ftostr32(current_position[Z_AXIS]+CNC_PARKING_EXTRUDER_SECURITY_RAISE));
+      char cmd[30];
+      sprintf_P(cmd, PSTR("G0 X%i Y%i Z%s"), 
+              (int16_t) CNC_PARKING_EXTRUDER_PARKING_X, 
+              (int16_t) CNC_PARKING_EXTRUDER_PARKING_Y, 
+              ftostr32(current_position[Z_AXIS]+CNC_PARKING_EXTRUDER_SECURITY_RAISE));
       enqueue_and_echo_command(cmd);
   }
   
   void _manual_tool_change_finish(){
-      char cmd[30];
-      sprintf_P(cmd, PSTR("M206 Z%s \nM420 S1"), ftostr32(-1.00*(current_position[Z_AXIS]-(Z_CLEARANCE_BETWEEN_PROBES-zprobe_zoffset))));
-      //sprintf_P(cmd, PSTR("G92 Z%s"), ftostr32(Z_CLEARANCE_BETWEEN_PROBES - zprobe_zoffset));
-      enqueue_and_echo_command(cmd);
+      enqueue_and_echo_commands_P(PSTR("G28 Z"));
+      stepper.synchronize();
+      enqueue_and_echo_commands_P(PSTR("M420 S1")); 
   }
-
 
   void lcd_manual_tool_change(){
     START_MENU();
@@ -2911,12 +2912,12 @@ void lcd_quick_feedback(const bool clear_buttons) {
 
     ENCODER_DIRECTION_NORMAL();
     
-    MENU_ITEM(function, "1. Park tool", _manual_tool_change_park);
-    MENU_ITEM(gcode, "2. Probe Z new tool", PSTR("G30"));
-    MENU_ITEM(function, "3. Set new Z", _manual_tool_change_finish);
+    MENU_ITEM(function, "1. Park the tool", _manual_tool_change_park);
+    MENU_ITEM(function, "2. Probe the tool Z", _manual_tool_change_finish);
     
     END_MENU();
   }
+
 
 
   float move_menu_scale;
