@@ -11592,8 +11592,7 @@ void cnc_tool_change(const uint8_t tmp_extruder, const float fr_mm_s/*=0.0*/, bo
            *    1. Raise Z-Axis to give enough clearance
            *    2. Move to park position of old extruder
            *    3. Pause and wait for user LCD click
-           *    4. Probe for the new Z offset (G30)
-           *    5. Save the new offset (M206)
+           *    4. Probe for the new Z offset (G30). Save the new offset (M206)
            */
 
           // STEP 1
@@ -11626,24 +11625,15 @@ void cnc_tool_change(const uint8_t tmp_extruder, const float fr_mm_s/*=0.0*/, bo
           #endif
           // Perform a pause and wait for the user to click on the LCD
           //LCD_MESSAGEPGM("Change tool. Put Z probe and click");
-          enqueue_and_echo_commands_P(PSTR("M0 Ch.tool.Put.Probe.Continue"));
-
+          enqueue_and_echo_commands_P(PSTR("M0 Change the Tool"));
+          enqueue_and_echo_commands_P(PSTR("M0 Put the Probe"));
+          
           // STEP 4
           #if ENABLED(DEBUG_LEVELING_FEATURE)
             SERIAL_ECHOLNPGM("(4) Probe for the new Z0 of the new tool");
           #endif
-          enqueue_and_echo_commands_P(PSTR("G30"));
+          enqueue_and_echo_commands_P(PSTR("G28 Z"));
           stepper.synchronize();
-
-          // STEP 5
-          #if ENABLED(DEBUG_LEVELING_FEATURE)
-            SERIAL_ECHOLNPGM("(5) Applying Z-offset for the new tool");
-          #endif
-          //char str_new_z_offset[20];
-          //float new_z_offset = float(-1.00 * (current_position[Z_AXIS]-(Z_CLEARANCE_BETWEEN_PROBES-zprobe_zoffset)));
-          //sprintf_P(str_new_z_offset, PSTR("M206 Z%s"), ftostr32(new_z_offset));
-          //enqueue_and_echo_commands_P(str_new_z_offset);
-          
           enqueue_and_echo_commands_P(PSTR("M420 S1")); 
 
         }
