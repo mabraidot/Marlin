@@ -2892,12 +2892,17 @@ void lcd_quick_feedback(const bool clear_buttons) {
 
 
   void _manual_tool_change_park(){
-      char cmd[30];
-      sprintf_P(cmd, PSTR("G0 X%i Y%i Z%s"), 
-              (int16_t) CNC_PARKING_EXTRUDER_PARKING_X, 
-              (int16_t) CNC_PARKING_EXTRUDER_PARKING_Y, 
+      char cmd[20];
+      char cmdxy[20];
+      
+      sprintf_P(cmd, PSTR("G0 Z%s"), 
               ftostr32(current_position[Z_AXIS]+CNC_PARKING_EXTRUDER_SECURITY_RAISE));
       enqueue_and_echo_command(cmd);
+      stepper.synchronize();
+      sprintf_P(cmdxy, PSTR("G0 X%i Y%i"), 
+              (int16_t) CNC_PARKING_EXTRUDER_PARKING_X, 
+              (int16_t) CNC_PARKING_EXTRUDER_PARKING_Y);
+      enqueue_and_echo_command(cmdxy);
   }
   
   void _manual_tool_change_finish(){
