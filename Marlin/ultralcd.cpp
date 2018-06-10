@@ -193,6 +193,7 @@ uint16_t max_display_update_time = 0;
   //void lcd_z_offset();
   void lcd_grid_bed_leveling();
   void lcd_manual_tool_change();
+  void lcd_manual_tool_change_step_1();
 
   #if ENABLED(LCD_INFO_MENU)
     #if ENABLED(PRINTCOUNTER)
@@ -2890,37 +2891,52 @@ void lcd_quick_feedback(const bool clear_buttons) {
   }
 
 
+  void lcd_manual_tool_change_step_1(){
+    
+    refresh_cmd_timeout();  
+    if (lcd_clicked) {
+      
+      enqueue_and_echo_commands_P(PSTR("G28 Z"));
+      enqueue_and_echo_commands_P(PSTR("M420 S1"));
+      
+      stepper.synchronize();
+      //lcd_goto_screen(lcd_prepare_menu, true);
+      lcd_goto_previous_menu();
 
-  void _manual_tool_change_park(){
+    }
+
+    if (lcdDrawUpdate){
+      lcd_implementation_drawmenu_static(0, PSTR("Change the tool now,"));
+      lcd_implementation_drawmenu_static(1, PSTR("and put the probe."));
+      lcd_implementation_drawmenu_static(2, PSTR("Click to continue..."));
+    }
+    lcdDrawUpdate = LCDVIEW_CALL_REDRAW_NEXT;
+    
+  }
+
+  void lcd_manual_tool_change(){
+    ENCODER_DIRECTION_NORMAL();
+    defer_return_to_status = true;
+    
+    if (lcdDrawUpdate) lcd_implementation_drawmenu_static(0, PSTR("Click to Park..."));
+    if (lcd_clicked) {
+
       char cmd[20];
       char cmdxy[20];
       
       sprintf_P(cmd, PSTR("G0 Z%s"), 
               ftostr32(current_position[Z_AXIS]+CNC_PARKING_EXTRUDER_SECURITY_RAISE));
       enqueue_and_echo_command(cmd);
-      stepper.synchronize();
       sprintf_P(cmdxy, PSTR("G0 X%i Y%i"), 
               (int16_t) CNC_PARKING_EXTRUDER_PARKING_X, 
               (int16_t) CNC_PARKING_EXTRUDER_PARKING_Y);
       enqueue_and_echo_command(cmdxy);
-  }
-  
-  void _manual_tool_change_finish(){
-      enqueue_and_echo_commands_P(PSTR("G28 Z"));
       stepper.synchronize();
-      enqueue_and_echo_commands_P(PSTR("M420 S1")); 
-  }
-
-  void lcd_manual_tool_change(){
-    START_MENU();
-    MENU_BACK(MSG_PREPARE);
-
-    ENCODER_DIRECTION_NORMAL();
-    
-    MENU_ITEM(function, "1. Park the tool", _manual_tool_change_park);
-    MENU_ITEM(function, "2. Probe the tool Z", _manual_tool_change_finish);
-    
-    END_MENU();
+      
+      lcd_goto_screen(lcd_manual_tool_change_step_1, true);
+      
+    }
+    //lcdDrawUpdate = LCDVIEW_CALL_REDRAW_NEXT;
   }
 
 
