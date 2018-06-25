@@ -1362,7 +1362,7 @@
  * waiting for the user confirmation, then probes Z for the new tool and
  * apply the offset.
  */
-#define CNC_MANUAL_TOOL_CHANGE
+//#define CNC_MANUAL_TOOL_CHANGE
 #define CNC_PARKING_EXTRUDER
 #if ENABLED(CNC_PARKING_EXTRUDER)
   #define CNC_PARKING_EXTRUDER_PARKING_X 0        // X position for parking the tool
