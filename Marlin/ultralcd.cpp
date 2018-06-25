@@ -2874,6 +2874,8 @@ void lcd_quick_feedback(const bool clear_buttons) {
     //snprintf_P(leveling_command, sizeof(leveling_command), PSTR("G29 X%i Y%i L0 R%i F0 B%i T V4"), (int16_t) floor(gbl_workarea_x/gbl_workarea_division), (int16_t) floor(gbl_workarea_y/gbl_workarea_division), (int16_t) gbl_workarea_x, (int16_t) gbl_workarea_y);
     snprintf_P(leveling_command, sizeof(leveling_command), PSTR("G29 L0 R%i F0 B%i T V4"), (int16_t) gbl_workarea_x, (int16_t) gbl_workarea_y);
     enqueue_and_echo_command(leveling_command);
+    enqueue_and_echo_commands_P(PSTR("G1 X0 Y0"));
+    stepper.synchronize();
 
   }
   
