@@ -600,7 +600,7 @@
  */
 
 // 1/128 microsteps
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 354.2290, 359.1039, 5120, 500 }
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 358, 358, 5120, 500 }
 //#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 4000, 500 }
 
 /**
