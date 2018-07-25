@@ -2699,9 +2699,9 @@ void kill_screen(const char* lcd_msg) {
 
 
 
-  int16_t gbl_workarea_x = X_BED_SIZE/2;
-  int16_t gbl_workarea_y = Y_BED_SIZE/2;
-  int16_t gbl_workarea_division = 100;
+  int16_t gbl_workarea_x = 150;
+  int16_t gbl_workarea_y = 100;
+  //int16_t gbl_workarea_division = 100;
   
   void _lcd_grid_bed_leveling_generate(){
 

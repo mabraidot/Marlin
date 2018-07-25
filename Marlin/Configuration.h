@@ -791,10 +791,10 @@
 // Travel limits (mm) after homing, corresponding to endstop positions.
 #define X_MIN_POS 0
 #define Y_MIN_POS 0
-#define Z_MIN_POS -20
+#define Z_MIN_POS -30
 #define X_MAX_POS X_BED_SIZE
 #define Y_MAX_POS Y_BED_SIZE
-#define Z_MAX_POS 90
+#define Z_MAX_POS 80
 
 /**
  * Software Endstops
@@ -919,10 +919,10 @@
   #define GRID_MAX_POINTS_Y GRID_MAX_POINTS_X
 
   // Set the boundaries for probing (where the probe can reach).
-  #define LEFT_PROBE_BED_POSITION 5
-  #define RIGHT_PROBE_BED_POSITION X_BED_SIZE - 5
-  #define FRONT_PROBE_BED_POSITION 5
-  #define BACK_PROBE_BED_POSITION Y_BED_SIZE - 5
+  #define LEFT_PROBE_BED_POSITION 7
+  #define RIGHT_PROBE_BED_POSITION X_BED_SIZE - 7
+  #define FRONT_PROBE_BED_POSITION 7
+  #define BACK_PROBE_BED_POSITION Y_BED_SIZE - 7
 
   // The Z probe minimum outer margin (to validate G29 parameters).
   #define MIN_PROBE_EDGE 10
