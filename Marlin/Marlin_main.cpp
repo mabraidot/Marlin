@@ -12149,129 +12149,6 @@ void tool_change(const uint8_t tmp_extruder, const float fr_mm_s/*=0.0*/, bool n
   #endif // !MIXING_EXTRUDER || MIXING_VIRTUAL_TOOLS <= 1
 }
 
-
-/**
- * Perform a tool-change, which may result in moving the
- * previous tool out of the way and the new tool into place.
- */
-void cnc_tool_change(const uint8_t tmp_extruder, const float fr_mm_s/*=0.0*/, bool no_move/*=false*/) {
-  #if ENABLED(MIXING_EXTRUDER) && MIXING_VIRTUAL_TOOLS > 1
-
-    if (tmp_extruder >= MIXING_VIRTUAL_TOOLS)
-      return invalid_extruder_error(tmp_extruder);
-
-    // T0-Tnnn: Switch virtual tool by changing the mix
-    for (uint8_t j = 0; j < MIXING_STEPPERS; j++)
-      mixing_factor[j] = mixing_virtual_tool_mix[tmp_extruder][j];
-
-  #else // !MIXING_EXTRUDER || MIXING_VIRTUAL_TOOLS <= 1
-
-    const float old_feedrate_mm_s = fr_mm_s > 0.0 ? fr_mm_s : feedrate_mm_s;
-
-    feedrate_mm_s = fr_mm_s > 0.0 ? fr_mm_s : XY_PROBE_FEEDRATE_MM_S;
-
-    if (tmp_extruder != active_extruder) {
-      if (!no_move && axis_unhomed_error()) {
-        no_move = true;
-        #if ENABLED(DEBUG_LEVELING_FEATURE)
-          if (DEBUGGING(LEVELING)) SERIAL_ECHOLNPGM("No move on toolchange");
-        #endif
-      }
-
-      // Save current position to destination, for use later
-      set_destination_from_current();
-
-      #if ENABLED(CNC_PARKING_EXTRUDER) // Dual Parking extruder
-        
-        float z_raise = CNC_PARKING_EXTRUDER_SECURITY_RAISE;
-        if (!no_move) {
-          const float parkingposx = CNC_PARKING_EXTRUDER_PARKING_X;
-          const float parkingposy = CNC_PARKING_EXTRUDER_PARKING_Y;
-        
-          /**
-           *  Steps:
-           *    1. Raise Z-Axis to give enough clearance
-           *    2. Move to park position of old extruder
-           *    3. Pause and wait for user LCD click
-           *    4. Probe for the new Z offset (G30). Save the new offset (M206)
-           */
-
-          // STEP 1
-          #if ENABLED(DEBUG_LEVELING_FEATURE)
-            SERIAL_ECHOLNPGM("Starting Autopark");
-            if (DEBUGGING(LEVELING)) DEBUG_POS("current position:", current_position);
-          #endif
-          //current_position[Z_AXIS] += z_raise;
-          current_position[Z_AXIS] = current_position[Z_AXIS] + z_raise;
-          #if ENABLED(DEBUG_LEVELING_FEATURE)
-            SERIAL_ECHOLNPGM("(1) Raise Z-Axis ");
-            if (DEBUGGING(LEVELING)) DEBUG_POS("Moving to Raised Z-Position", current_position);
-          #endif
-          planner.buffer_line_kinematic(current_position, planner.max_feedrate_mm_s[Z_AXIS], active_extruder);
-          stepper.synchronize();
-
-          // STEP 2
-          current_position[X_AXIS] = parkingposx;
-          current_position[Y_AXIS] = parkingposy;
-          #if ENABLED(DEBUG_LEVELING_FEATURE)
-            SERIAL_ECHOLNPAIR("(2) Park extruder ", active_extruder);
-            if (DEBUGGING(LEVELING)) DEBUG_POS("Moving ParkPos", current_position);
-          #endif
-          planner.buffer_line_kinematic(current_position, planner.max_feedrate_mm_s[X_AXIS], active_extruder);
-          stepper.synchronize();
-
-          // STEP 3
-          #if ENABLED(DEBUG_LEVELING_FEATURE)
-            SERIAL_ECHOLNPGM("(3) Pause and wait for the manual tool change ");
-          #endif
-          // Perform a pause and wait for the user to click on the LCD
-          enqueue_and_echo_commands_P(PSTR("M0 Change the Tool"));
-          enqueue_and_echo_commands_P(PSTR("M0 Put the Probe"));
-          
-          // STEP 4
-          #if ENABLED(DEBUG_LEVELING_FEATURE)
-            SERIAL_ECHOLNPGM("(4) Probe for the new Z0 of the new tool");
-          #endif
-          enqueue_and_echo_commands_P(PSTR("G28 Z"));
-          stepper.synchronize();
-          enqueue_and_echo_commands_P(PSTR("M420 S1")); 
-
-        }
-
-        //current_position[Z_AXIS] -= hotend_offset[Z_AXIS][tmp_extruder] - hotend_offset[Z_AXIS][active_extruder]; // Apply Zoffset
-
-        #if ENABLED(DEBUG_LEVELING_FEATURE)
-          if (DEBUGGING(LEVELING)) DEBUG_POS("Applying Z-offset", current_position);
-        #endif
-
-      #endif // dualParking extruder
-
-      // Set the new active extruder
-      active_extruder = tmp_extruder;
-      
-    } // (tmp_extruder != active_extruder)
-
-    stepper.synchronize();
-
-    feedrate_mm_s = old_feedrate_mm_s;
-
-    #if ENABLED(SWITCHING_EXTRUDER) && !DONT_SWITCH
-      stepper.synchronize();
-      move_extruder_servo(active_extruder);
-    #endif
-
-    #if HAS_FANMUX
-      fanmux_switch(active_extruder);
-    #endif
-
-    SERIAL_ECHO_START();
-    SERIAL_ECHOLNPAIR(MSG_ACTIVE_EXTRUDER, (int)active_extruder);
-
-  #endif // !MIXING_EXTRUDER || MIXING_VIRTUAL_TOOLS <= 1
-}
-
-
-
 /**
  * T0-T3: Switch tool, usually switching extruders
  *
@@ -12289,35 +12166,25 @@ inline void gcode_T(const uint8_t tmp_extruder) {
     }
   #endif
 
-  #if ENABLED(CNC_MANUAL_TOOL_CHANGE)
-    cnc_tool_change(
+  #if HOTENDS == 1 || (ENABLED(MIXING_EXTRUDER) && MIXING_VIRTUAL_TOOLS > 1)
+
+    tool_change(tmp_extruder);
+
+  #elif HOTENDS > 1
+
+    tool_change(
       tmp_extruder,
       MMM_TO_MMS(parser.linearval('F')),
       (tmp_extruder == active_extruder) || parser.boolval('S')
     );
-  #else
 
-    #if HOTENDS == 1 || (ENABLED(MIXING_EXTRUDER) && MIXING_VIRTUAL_TOOLS > 1)
+  #endif
 
-      tool_change(tmp_extruder);
-
-    #elif HOTENDS > 1
-
-      tool_change(
-        tmp_extruder,
-        MMM_TO_MMS(parser.linearval('F')),
-        (tmp_extruder == active_extruder) || parser.boolval('S')
-      );
-
-    #endif
-
-    #if ENABLED(DEBUG_LEVELING_FEATURE)
-      if (DEBUGGING(LEVELING)) {
-        DEBUG_POS("AFTER", current_position);
-        SERIAL_ECHOLNPGM("<<< gcode_T");
-      }
-    #endif
-
+  #if ENABLED(DEBUG_LEVELING_FEATURE)
+    if (DEBUGGING(LEVELING)) {
+      DEBUG_POS("AFTER", current_position);
+      SERIAL_ECHOLNPGM("<<< gcode_T");
+    }
   #endif
 }
 
@@ -14789,8 +14656,7 @@ void setup() {
   #if ENABLED(USE_WATCHDOG)
     watchdog_init();
   #endif
-
-  LOOP_XYZ(i) axis_known_position[i] = axis_homed[i] = true;
+  
 }
 
 /**

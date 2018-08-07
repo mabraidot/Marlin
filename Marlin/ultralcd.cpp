@@ -2875,7 +2875,7 @@ void lcd_quick_feedback(const bool clear_buttons) {
     snprintf_P(leveling_command, sizeof(leveling_command), PSTR("G29 L0 R%i F0 B%i T V4"), (int16_t) gbl_workarea_x, (int16_t) gbl_workarea_y);
     enqueue_and_echo_command(leveling_command);
     enqueue_and_echo_commands_P(PSTR("G1 X0 Y0"));
-    stepper.synchronize();
+    planner.synchronize();
 
   }
   
@@ -2895,13 +2895,13 @@ void lcd_quick_feedback(const bool clear_buttons) {
 
   void lcd_manual_tool_change_step_1(){
     
-    refresh_cmd_timeout();  
+    //refresh_cmd_timeout();  
     if (lcd_clicked) {
       
       enqueue_and_echo_commands_P(PSTR("G28 Z"));
       enqueue_and_echo_commands_P(PSTR("M420 S1"));
       
-      stepper.synchronize();
+      planner.synchronize();
       //lcd_goto_screen(lcd_prepare_menu, true);
       lcd_goto_previous_menu();
 
@@ -2925,15 +2925,14 @@ void lcd_quick_feedback(const bool clear_buttons) {
 
       char cmd[20];
       char cmdxy[20];
-      
-      sprintf_P(cmd, PSTR("G0 Z%s"), 
-              ftostr32(current_position[Z_AXIS]+CNC_PARKING_EXTRUDER_SECURITY_RAISE));
+      sprintf_P(cmd, PSTR("G0 Z%i"), (int16_t) CNC_PARKING_EXTRUDER_SECURITY_RAISE);
+      //sprintf_P(cmd, PSTR("G0 Z%s"), ftostr32(current_position[Z_AXIS]+CNC_PARKING_EXTRUDER_SECURITY_RAISE));
       enqueue_and_echo_command(cmd);
       sprintf_P(cmdxy, PSTR("G0 X%i Y%i"), 
               (int16_t) CNC_PARKING_EXTRUDER_PARKING_X, 
               (int16_t) CNC_PARKING_EXTRUDER_PARKING_Y);
       enqueue_and_echo_command(cmdxy);
-      stepper.synchronize();
+      planner.synchronize();
       
       lcd_goto_screen(lcd_manual_tool_change_step_1, true);
       
@@ -3474,7 +3473,7 @@ void lcd_quick_feedback(const bool clear_buttons) {
     MENU_ITEM(submenu, MSG_MOTION, lcd_control_motion_menu);
 
     #if DISABLED(NO_VOLUMETRICS) || ENABLED(ADVANCED_PAUSE_FEATURE)
-      MENU_ITEM(submenu, MSG_FILAMENT, lcd_control_filament_menu);
+      //MENU_ITEM(submenu, MSG_FILAMENT, lcd_control_filament_menu); //RootCNC
     #elif ENABLED(LIN_ADVANCE)
       MENU_ITEM_EDIT(float52, MSG_ADVANCE_K, &planner.extruder_advance_K, 0, 999);
     #endif
