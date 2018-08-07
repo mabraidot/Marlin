@@ -688,7 +688,7 @@
   #define MSG_PRINT_PAUSED                    _UxGT("Mill paused")
 #endif
 #ifndef MSG_PRINTING
-  #define MSG_PRINTING                        _UxGT("Printing...")
+  #define MSG_PRINTING                        _UxGT("Milling...")
 #endif
 #ifndef MSG_PRINT_ABORTED
   #define MSG_PRINT_ABORTED                   _UxGT("Mill aborted")
@@ -979,7 +979,7 @@
   #define MSG_DAC_EEPROM_WRITE                _UxGT("DAC EEPROM Write")
 #endif
 #ifndef MSG_FILAMENT_CHANGE_HEADER_PAUSE
-  #define MSG_FILAMENT_CHANGE_HEADER_PAUSE    _UxGT("PRINT PAUSED")
+  #define MSG_FILAMENT_CHANGE_HEADER_PAUSE    _UxGT("MILL PAUSED")
 #endif
 #ifndef MSG_FILAMENT_CHANGE_HEADER_LOAD
   #define MSG_FILAMENT_CHANGE_HEADER_LOAD     _UxGT("LOAD FILAMENT")
