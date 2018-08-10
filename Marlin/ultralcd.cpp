@@ -174,6 +174,9 @@ uint16_t max_display_update_time = 0;
   void lcd_control_temperature_preheat_material2_settings_menu();
   void lcd_control_motion_menu();
   void lcd_control_filament_menu();
+  void lcd_grid_bed_leveling();
+  void lcd_auto_home();
+  
 
   #if ENABLED(LCD_INFO_MENU)
     #if ENABLED(PRINTCOUNTER)
@@ -2530,12 +2533,14 @@ void kill_screen(const char* lcd_msg) {
     //
     // Auto Home
     //
-    MENU_ITEM(gcode, MSG_AUTO_HOME, PSTR("G28"));
+    /*MENU_ITEM(gcode, MSG_AUTO_HOME, PSTR("G28"));
     #if ENABLED(INDIVIDUAL_AXIS_HOMING_MENU)
       MENU_ITEM(gcode, MSG_AUTO_HOME_X, PSTR("G28 X"));
       MENU_ITEM(gcode, MSG_AUTO_HOME_Y, PSTR("G28 Y"));
       MENU_ITEM(gcode, MSG_AUTO_HOME_Z, PSTR("G28 Z"));
     #endif
+    */
+    MENU_ITEM(submenu, MSG_AUTO_HOME, lcd_auto_home);
 
     //
     // Level Bed
@@ -2566,8 +2571,8 @@ void kill_screen(const char* lcd_msg) {
       //
       // Set Home Offsets
       //
-      MENU_ITEM(function, MSG_SET_HOME_OFFSETS, lcd_set_home_offsets);
-      //MENU_ITEM(gcode, MSG_SET_ORIGIN, PSTR("G92 X0 Y0 Z0"));
+      //MENU_ITEM(function, MSG_SET_HOME_OFFSETS, lcd_set_home_offsets);
+      MENU_ITEM(gcode, MSG_SET_ORIGIN, PSTR("G92 X0 Y0 Z0"));
     #endif
 
     //
@@ -2643,6 +2648,48 @@ void kill_screen(const char* lcd_msg) {
 
     END_MENU();
   }
+
+  // RootCNC
+  void lcd_auto_home() {
+      START_MENU();
+      MENU_BACK(MSG_PREPARE);
+
+      MENU_ITEM(gcode, "Home All", PSTR("G28"));
+      MENU_ITEM(gcode, "Home X", PSTR("G28 X"));
+      MENU_ITEM(gcode, "Home Y", PSTR("G28 Y"));
+      MENU_ITEM(gcode, "Home Z", PSTR("G28 Z"));
+      
+      END_MENU();
+  }
+
+  int16_t gbl_workarea_x = 150;
+  int16_t gbl_workarea_y = 100;
+  //int16_t gbl_workarea_division = 100;
+  
+  void _lcd_grid_bed_leveling_generate(){
+
+    char leveling_command[35];
+    //snprintf_P(leveling_command, sizeof(leveling_command), PSTR("G29 X%i Y%i L0 R%i F0 B%i T V4"), (int16_t) floor(gbl_workarea_x/gbl_workarea_division), (int16_t) floor(gbl_workarea_y/gbl_workarea_division), (int16_t) gbl_workarea_x, (int16_t) gbl_workarea_y);
+    snprintf_P(leveling_command, sizeof(leveling_command), PSTR("G29 L%i R%i F%i B%i T V4"), (int16_t) MIN_PROBE_EDGE, (int16_t) gbl_workarea_x - MIN_PROBE_EDGE, (int16_t) MIN_PROBE_EDGE, (int16_t) gbl_workarea_y - MIN_PROBE_EDGE);
+    enqueue_and_echo_command(leveling_command);
+    enqueue_and_echo_commands_P(PSTR("G1 X0 Y0"));
+    stepper.synchronize();
+
+  }
+  
+  void lcd_grid_bed_leveling(){
+    START_MENU();
+    MENU_BACK(MSG_PREPARE);
+
+    ENCODER_DIRECTION_NORMAL();
+    MENU_ITEM_EDIT(int3, "W.Area X [mm]", &gbl_workarea_x, 10, X_BED_SIZE);
+    MENU_ITEM_EDIT(int3, "W.Area Y [mm]", &gbl_workarea_y, 10, Y_BED_SIZE);
+    //MENU_ITEM_EDIT(int3, "W.Division [mm]", &gbl_workarea_division, 1, min(gbl_workarea_x, gbl_workarea_y));
+    MENU_ITEM(function, "Probe bed", _lcd_grid_bed_leveling_generate);
+    
+    END_MENU();
+  }
+
 
   float move_menu_scale;
 
@@ -3127,9 +3174,9 @@ void kill_screen(const char* lcd_msg) {
   void lcd_control_menu() {
     START_MENU();
     MENU_BACK(MSG_MAIN);
-    MENU_ITEM(submenu, MSG_TEMPERATURE, lcd_control_temperature_menu);
+    //MENU_ITEM(submenu, MSG_TEMPERATURE, lcd_control_temperature_menu);
     MENU_ITEM(submenu, MSG_MOTION, lcd_control_motion_menu);
-    MENU_ITEM(submenu, MSG_FILAMENT, lcd_control_filament_menu);
+    //MENU_ITEM(submenu, MSG_FILAMENT, lcd_control_filament_menu);
 
     #if HAS_LCD_CONTRAST
       MENU_ITEM_EDIT_CALLBACK(int3, MSG_CONTRAST, &lcd_contrast, LCD_CONTRAST_MIN, LCD_CONTRAST_MAX, lcd_callback_set_contrast, true);
