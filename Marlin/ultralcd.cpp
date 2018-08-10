@@ -2559,7 +2559,8 @@ void kill_screen(const char* lcd_msg) {
             #endif
           );
     #elif PLANNER_LEVELING && DISABLED(PROBE_MANUALLY)
-      MENU_ITEM(gcode, MSG_BED_LEVELING, PSTR("G28\nG29"));
+      //MENU_ITEM(gcode, MSG_BED_LEVELING, PSTR("G28\nG29"));
+      MENU_ITEM(submenu, MSG_BED_LEVELING, lcd_grid_bed_leveling);
     #endif
 
     #if ENABLED(LEVEL_BED_CORNERS) && DISABLED(LCD_BED_LEVELING)
@@ -2593,6 +2594,7 @@ void kill_screen(const char* lcd_msg) {
       //
       // Cooldown
       //
+      /*
       bool has_heat = false;
       HOTEND_LOOP() if (thermalManager.target_temperature[HOTEND_INDEX]) { has_heat = true; break; }
       #if HAS_TEMP_BED
@@ -2610,6 +2612,7 @@ void kill_screen(const char* lcd_msg) {
         MENU_ITEM(function, MSG_PREHEAT_1, lcd_preheat_m1_e0_only);
         MENU_ITEM(function, MSG_PREHEAT_2, lcd_preheat_m2_e0_only);
       #endif
+      */
 
     #endif // TEMP_SENSOR_0 != 0
 
@@ -3121,7 +3124,7 @@ void kill_screen(const char* lcd_msg) {
         MENU_ITEM(gcode, MSG_SELECT " " MSG_E2, PSTR("T1"));
     #endif
 
-    MENU_ITEM(submenu, MSG_MOVE_E, lcd_move_get_e_amount);
+    //MENU_ITEM(submenu, MSG_MOVE_E, lcd_move_get_e_amount);
     #if E_MANUAL > 1
       MENU_ITEM(submenu, MSG_MOVE_E MSG_MOVE_E1, lcd_move_get_e0_amount);
       MENU_ITEM(submenu, MSG_MOVE_E MSG_MOVE_E2, lcd_move_get_e1_amount);
