@@ -743,7 +743,7 @@
 
 // G38.2 and G38.3 Probe Target
 // Set MULTIPLE_PROBING if you want G38 to double touch
-//#define G38_PROBE_TARGET
+#define G38_PROBE_TARGET
 #if ENABLED(G38_PROBE_TARGET)
   #define G38_MINIMUM_MOVE 0.0275 // minimum distance in mm that will produce a move (determined using the print statement in check_move)
 #endif
@@ -1354,21 +1354,6 @@
  * and G92.1 to reset the workspace to native machine space.
  */
 #define CNC_COORDINATE_SYSTEMS
-
-/**
- * CNC Tool changing
- *
- * Enables Tnn command to perform a tool change, parking the spindle and 
- * waiting for the user confirmation, then probes Z for the new tool and
- * apply the offset.
- */
-//#define CNC_MANUAL_TOOL_CHANGE
-#define CNC_PARKING_EXTRUDER
-#if ENABLED(CNC_PARKING_EXTRUDER)
-  #define CNC_PARKING_EXTRUDER_PARKING_X 0        // X position for parking the tool
-  #define CNC_PARKING_EXTRUDER_PARKING_Y 0        // Y position for parking the tool
-  #define CNC_PARKING_EXTRUDER_SECURITY_RAISE 50   // Z position to raise before parking
-#endif
 
 /**
  * M43 - display pin status, watch pins for changes, watch endstops & toggle LED, Z servo probe test, toggle pins
