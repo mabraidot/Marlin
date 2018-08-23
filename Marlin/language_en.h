@@ -646,7 +646,7 @@
   #define MSG_PRINT_PAUSED                    _UxGT("Mill paused")
 #endif
 #ifndef MSG_RESUMING
-  #define MSG_RESUMING                        _UxGT("Resuming mill")
+  #define MSG_RESUMING                        _UxGT("Milling...")
 #endif
 #ifndef MSG_PRINT_ABORTED
   #define MSG_PRINT_ABORTED                   _UxGT("Mill aborted")
