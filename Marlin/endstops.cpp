@@ -319,11 +319,28 @@ void Endstops::update() {
       } \
     }while(0)
 
+  /*
   #if ENABLED(G38_PROBE_TARGET) && PIN_EXISTS(Z_MIN_PROBE) && !(CORE_IS_XY || CORE_IS_XZ)
     // If G38 command is active check Z_MIN_PROBE for ALL movement
     if (G38_move) {
       UPDATE_ENDSTOP_BIT(Z, MIN_PROBE);
       if (TEST_ENDSTOP(_ENDSTOP(Z, MIN_PROBE))) {
+
+        if      (stepper.current_block->steps[_AXIS(X)] > 0) { _ENDSTOP_HIT(X, MIN); stepper.endstop_triggered(_AXIS(X)); }
+        else if (stepper.current_block->steps[_AXIS(Y)] > 0) { _ENDSTOP_HIT(Y, MIN); stepper.endstop_triggered(_AXIS(Y)); }
+        else if (stepper.current_block->steps[_AXIS(Z)] > 0) { _ENDSTOP_HIT(Z, MIN); stepper.endstop_triggered(_AXIS(Z)); }
+        G38_endstop_hit = true;
+      }
+    }
+  #endif
+  */
+
+  #if ENABLED(G38_PROBE_TARGET) && PIN_EXISTS(Z_MIN) && !(CORE_IS_XY || CORE_IS_XZ)
+    // If G38 command is active check Z_MIN_PROBE for ALL movement
+    if (G38_move) {
+      UPDATE_ENDSTOP_BIT(Z, MIN);
+      if (TEST_ENDSTOP(_ENDSTOP(Z, MIN))) {
+      
         if      (stepper.current_block->steps[_AXIS(X)] > 0) { _ENDSTOP_HIT(X, MIN); stepper.endstop_triggered(_AXIS(X)); }
         else if (stepper.current_block->steps[_AXIS(Y)] > 0) { _ENDSTOP_HIT(Y, MIN); stepper.endstop_triggered(_AXIS(Y)); }
         else if (stepper.current_block->steps[_AXIS(Z)] > 0) { _ENDSTOP_HIT(Z, MIN); stepper.endstop_triggered(_AXIS(Z)); }
