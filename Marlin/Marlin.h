@@ -539,4 +539,17 @@ void do_blocking_move_to_xy(const float &x, const float &y, const float &fr_mm_s
 
 #endif // CARTESIAN
 
+
+/*****************************************/
+/*              RootCNC                  */
+/*****************************************/
+extern float bit_diameter;
+extern float probe_x_width;
+extern float probe_y_width;
+extern float probe_z_width;
+/*****************************************/
+/*            End RootCNC                */
+/*****************************************/
+
+
 #endif // MARLIN_H
