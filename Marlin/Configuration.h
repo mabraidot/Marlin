@@ -530,7 +530,8 @@
  *                                      X, Y, Z, E0 [, E1[, E2[, E3[, E4]]]]
  */
 // 1/128 microsteps
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 358, 358, 5120, 500 }
+//#define DEFAULT_AXIS_STEPS_PER_UNIT   { 358, 358, 5120, 500 }
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 355.86, 355.86, 5120, 500 }
 
 /**
  * Default Max Feed Rate (mm/s)
