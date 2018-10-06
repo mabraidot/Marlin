@@ -529,9 +529,14 @@
  * Override with M92
  *                                      X, Y, Z, E0 [, E1[, E2[, E3[, E4]]]]
  */
-// 1/128 microsteps
+// 1/128 microsteps on XY, 1/32 microsteps on Z
 //#define DEFAULT_AXIS_STEPS_PER_UNIT   { 358, 358, 5120, 500 }
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 355.86, 355.86, 5120, 500 }
+//#define DEFAULT_AXIS_STEPS_PER_UNIT   { 355.86, 355.86, 5120, 500 }
+
+// 1/128 microsteps on XY, 1/16 microsteps on Z
+//#define DEFAULT_AXIS_STEPS_PER_UNIT   { 358, 358, 2560, 500 }
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 355.86, 355.86, 2560, 500 }
+
 
 /**
  * Default Max Feed Rate (mm/s)
@@ -782,8 +787,8 @@
 // @section machine
 
 // The size of the print bed
-#define X_BED_SIZE 570
-#define Y_BED_SIZE 410
+#define X_BED_SIZE 573
+#define Y_BED_SIZE 411
 
 // Travel limits (mm) after homing, corresponding to endstop positions.
 #define X_MIN_POS 0
