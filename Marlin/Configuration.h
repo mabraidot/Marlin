@@ -533,9 +533,9 @@
 //#define DEFAULT_AXIS_STEPS_PER_UNIT   { 358, 358, 5120, 500 }
 //#define DEFAULT_AXIS_STEPS_PER_UNIT   { 355.86, 355.86, 5120, 500 }
 
-// 1/128 microsteps on XY, 1/16 microsteps on Z
+// 1/128 microsteps on XY, 1/32 microsteps on Z
 //#define DEFAULT_AXIS_STEPS_PER_UNIT   { 358, 358, 2560, 500 }
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 355.86, 355.86, 2560, 500 }
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 355.86, 355.86, 800, 500 }
 
 
 /**
