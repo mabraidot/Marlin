@@ -535,7 +535,7 @@
 
 // 1/128 microsteps on XY, 1/32 microsteps on Z
 //#define DEFAULT_AXIS_STEPS_PER_UNIT   { 358, 358, 2560, 500 }
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 355.86, 355.86, 800, 500 }
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 355.86, 357.29, 800, 500 }
 
 
 /**
@@ -1084,9 +1084,12 @@
 
 #if ENABLED(SKEW_CORRECTION)
   // Input all length measurements here:
-  #define XY_DIAG_AC 282.8427124746
-  #define XY_DIAG_BD 282.8427124746
-  #define XY_SIDE_AD 200
+  //#define XY_DIAG_AC 282.8427124746
+  //#define XY_DIAG_BD 282.8427124746
+  //#define XY_SIDE_AD 200
+  #define XY_DIAG_AC 155.96
+  #define XY_DIAG_BD 155.05
+  #define XY_SIDE_AD 110
 
   // Or, set the default skew factors directly here
   // to override the above measurements:
