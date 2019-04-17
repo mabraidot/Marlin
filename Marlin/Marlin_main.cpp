@@ -11590,10 +11590,10 @@ inline void gcode_T(const uint8_t tmp_extruder) {
 /*****************************************/
 /*              RootCNC                  */
 /*****************************************/
-float bit_diameter                    = 3.17;
-float probe_x_width                   = 1.7;
-float probe_y_width                   = 1.7;
-float probe_z_width                   = 1.7;
+float bit_diameter                    = 3.174;
+float probe_x_width                   = 8.95;
+float probe_y_width                   = 8.95;
+float probe_z_width                   = 10.00;
 float corner_finder_destination[XYZ]  = { -1.0 };
 
 // Custom G92
@@ -11692,7 +11692,8 @@ inline void corner_finder_g38(){
   //gcode_get_destination();
   LOOP_XYZ(i) {
     if (corner_finder_destination[i] != current_position[i]) {
-      const float v = corner_finder_destination[i] + ((axis_relative_modes[i]) ? current_position[i] : 0);
+      //const float v = corner_finder_destination[i] + ((axis_relative_modes[i] || relative_mode) ? current_position[i] : 0);
+      const float v = corner_finder_destination[i];
       destination[i] = LOGICAL_TO_NATIVE(v, i);
     }
     else
@@ -11704,7 +11705,7 @@ inline void corner_finder_g38(){
   // If any axis has enough movement, do the move
   LOOP_XYZ(i)
     if (FABS(destination[i] - current_position[i]) >= G38_MINIMUM_MOVE) {
-      feedrate_mm_s = (i != Z_AXIS) ? homing_feedrate((AxisEnum)i) / 2 : homing_feedrate((AxisEnum)i);
+      feedrate_mm_s = (i != Z_AXIS) ? homing_feedrate((AxisEnum)i) / 3 : homing_feedrate((AxisEnum)i);
       // If G38.2 fails throw an error
       if (!corner_finder_g38_run_probe()) {
         SERIAL_ERROR_START();
@@ -11724,7 +11725,8 @@ inline void corner_finder_g1(){
     //gcode_get_destination();
     LOOP_XYZ(i) {
       if (corner_finder_destination[i] != current_position[i]) {
-        const float v = corner_finder_destination[i] + ((axis_relative_modes[i]) ? current_position[i] : 0);
+        //const float v = corner_finder_destination[i] + ((axis_relative_modes[i] || relative_mode) ? current_position[i] : 0);
+        const float v = corner_finder_destination[i];
         destination[i] = LOGICAL_TO_NATIVE(v, i);
       }
       else
@@ -11736,11 +11738,32 @@ inline void corner_finder_g1(){
   }
 }
 
+// Custom G28 Z
+inline void corner_finder_g28z(){
+
+  stepper.synchronize();
+  setup_for_endstop_or_probe_move();
+  endstops.enable(true);
+  set_destination_from_current();
+  // Raise Z before homing any other axes and z is not already high enough (never lower z)
+  destination[Z_AXIS] = Z_HOMING_HEIGHT;
+  if (destination[Z_AXIS] > current_position[Z_AXIS]) {
+    do_blocking_move_to_z(destination[Z_AXIS]);
+  }
+  HOMEAXIS(Z);
+  SYNC_PLAN_POSITION_KINEMATIC();
+  endstops.not_homing();
+  clean_up_after_endstop_or_probe_move();
+
+}
+
 // Custom g-code to do the Corner Finder routine
 inline void gcode_M490() {
   
-  relative_mode = true;
+  //corner_finder_g28z();
 
+  relative_mode = true;
+  
   // g92 X0 Y0 Z0
   corner_finder_destination[X_AXIS] = 0.0;
   corner_finder_destination[Y_AXIS] = 0.0;
@@ -11756,25 +11779,25 @@ inline void gcode_M490() {
   stepper.synchronize();
 
   //G92 Z{probe_z_width}
-  corner_finder_destination[X_AXIS] = -1;
-  corner_finder_destination[Y_AXIS] = -1;
+  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
+  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
   corner_finder_destination[Z_AXIS] = probe_z_width;
   corner_finder_g92();
 
   //G1 Z5
   corner_finder_destination[X_AXIS] = current_position[X_AXIS];
   corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
-  corner_finder_destination[Z_AXIS] = 5;
+  corner_finder_destination[Z_AXIS] = probe_z_width + 5;
   corner_finder_g1();
-  //G1 X-50
-  corner_finder_destination[X_AXIS] = -50;
+  //G1 X-40
+  corner_finder_destination[X_AXIS] = -40;
   corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
   corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
   corner_finder_g1();
-  //G1 Z0
+  //G1 Z-1
   corner_finder_destination[X_AXIS] = current_position[X_AXIS];
   corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
-  corner_finder_destination[Z_AXIS] = -5;
+  corner_finder_destination[Z_AXIS] = -1;
   corner_finder_g1();
 
   // PROBE X
@@ -11792,17 +11815,17 @@ inline void gcode_M490() {
   corner_finder_g92();
 
   //G1 X-5
-  corner_finder_destination[X_AXIS] = -5;
+  corner_finder_destination[X_AXIS] = -1 * probe_x_width - 5;
   corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
   corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
   corner_finder_g1();
-  //G1 Y-50
+  //G1 Y-40
   corner_finder_destination[X_AXIS] = current_position[X_AXIS];
-  corner_finder_destination[Y_AXIS] = -50;
+  corner_finder_destination[Y_AXIS] = -40;
   corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
   corner_finder_g1();
-  //G1 X10
-  corner_finder_destination[X_AXIS] = 10;
+  //G1 X20
+  corner_finder_destination[X_AXIS] = probe_x_width + 15;
   corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
   corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
   corner_finder_g1();
@@ -11823,13 +11846,19 @@ inline void gcode_M490() {
 
   //G1 Y-5
   corner_finder_destination[X_AXIS] = current_position[X_AXIS];
-  corner_finder_destination[Y_AXIS] = -5;
+  corner_finder_destination[Y_AXIS] = -1 * probe_y_width - 5;
   corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
   corner_finder_g1();
-  //G1 Z20
+  //G1 Z10
   corner_finder_destination[X_AXIS] = current_position[X_AXIS];
   corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
-  corner_finder_destination[Z_AXIS] = 20;
+  corner_finder_destination[Z_AXIS] = probe_z_width + 5;
+  corner_finder_g1();
+  
+  //G1 X0 Y0
+  corner_finder_destination[X_AXIS] = 0;
+  corner_finder_destination[Y_AXIS] = 0;
+  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
   corner_finder_g1();
   
   relative_mode = false;

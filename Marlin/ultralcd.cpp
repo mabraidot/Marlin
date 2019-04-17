@@ -2676,9 +2676,9 @@ void kill_screen(const char* lcd_msg) {
     START_MENU();
     MENU_BACK(MSG_CORNER_FINDER);
 
-    MENU_ITEM_EDIT(float32, MSG_X_WIDTH, &probe_x_width, 0.0, 10.0);
-    MENU_ITEM_EDIT(float32, MSG_Y_WIDTH, &probe_y_width, 0.0, 10.0);
-    MENU_ITEM_EDIT(float32, MSG_Z_WIDTH, &probe_z_width, 0.0, 10.0);
+    MENU_ITEM_EDIT(float32, MSG_X_WIDTH, &probe_x_width, 0.0, 15.0);
+    MENU_ITEM_EDIT(float32, MSG_Y_WIDTH, &probe_y_width, 0.0, 15.0);
+    MENU_ITEM_EDIT(float32, MSG_Z_WIDTH, &probe_z_width, 0.0, 15.0);
 
     END_MENU();
   }
@@ -2689,7 +2689,7 @@ void kill_screen(const char* lcd_msg) {
 
     ENCODER_DIRECTION_NORMAL();
     MENU_ITEM(submenu, MSG_PROBE_DIMENSIONS, _lcd_corner_finder_probe_dimensions);
-    MENU_ITEM_EDIT(float32, MSG_BIT_DIAMETER, &bit_diameter, 0.0, 13.0);
+    MENU_ITEM_EDIT(float32, MSG_BIT_DIAMETER, &bit_diameter, 0.00, 13.00);
     MENU_ITEM(gcode, MSG_FIND_CORNER, PSTR("M490"));
     
     END_MENU();
