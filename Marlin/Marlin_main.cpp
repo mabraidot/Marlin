@@ -6370,6 +6370,7 @@ void home_all_axes() { gcode_G28(true); }
 
     endstops.hit_on_purpose();
     endstops.not_homing();
+
     return G38_pass_fail;
   }
 
@@ -12625,6 +12626,385 @@ inline void gcode_T(const uint8_t tmp_extruder) {
   #endif
 }
 
+
+/*****************************************/
+/*              RootCNC                  */
+/*****************************************/
+float corner_finder_destination[XYZ]  = { -1.0 };
+
+// Custom G92
+void corner_finder_g92(){
+  planner.synchronize();
+
+  LOOP_XYZ(i) {
+    if (corner_finder_destination[i] != current_position[i]) {
+      const float l = corner_finder_destination[i],
+                  v = LOGICAL_TO_NATIVE(l, i),
+                  d = v - current_position[i];
+      if (!NEAR_ZERO(d)) {
+        #if HAS_POSITION_SHIFT
+          position_shift[i] += d;
+          update_software_endstops((AxisEnum)i);
+        #endif
+      }
+    }
+  }
+
+  #if ENABLED(CNC_COORDINATE_SYSTEMS)
+    // Apply workspace offset to the active coordinate system
+    if (WITHIN(active_coordinate_system, 0, MAX_COORDINATE_SYSTEMS - 1))
+      COPY(coordinate_system[active_coordinate_system], position_shift);
+  #endif
+
+  report_current_position();
+}
+
+// Custom G38.2: run the probe
+static bool corner_finder_g38_run_probe(){
+
+  bool G38_pass_fail = false;
+
+  #if MULTIPLE_PROBING > 1
+    // Get direction of move and retract
+    float retract_mm[XYZ];
+    LOOP_XYZ(i) {
+      float dist = destination[i] - current_position[i];
+      retract_mm[i] = ABS(dist) < G38_MINIMUM_MOVE ? 0 : home_bump_mm((AxisEnum)i) * (dist > 0 ? -1 : 1);
+    }
+  #endif
+
+  // Move until destination reached or target hit
+  planner.synchronize();  // wait until the machine is idle
+  endstops.enable(true);
+  G38_move = true;
+  G38_endstop_hit = false;
+  prepare_move_to_destination();
+  planner.synchronize();
+  G38_move = false;
+
+  endstops.hit_on_purpose();
+  set_current_from_steppers_for_axis(ALL_AXES);
+  SYNC_PLAN_POSITION_KINEMATIC();
+
+  if (G38_endstop_hit) {
+
+    G38_pass_fail = true;
+
+    #if MULTIPLE_PROBING > 1
+      // Move away by the retract distance
+      set_destination_from_current();
+      LOOP_XYZ(i) destination[i] += retract_mm[i];
+      endstops.enable(false);
+      prepare_move_to_destination();
+      planner.synchronize();
+
+      feedrate_mm_s /= 4;
+
+      // Bump the target more slowly
+      LOOP_XYZ(i) destination[i] -= retract_mm[i] * 2;
+
+      endstops.enable(true);
+      G38_move = true;
+      prepare_move_to_destination();
+      planner.synchronize();
+      G38_move = false;
+
+      set_current_from_steppers_for_axis(ALL_AXES);
+      SYNC_PLAN_POSITION_KINEMATIC();
+    #endif
+  }
+
+  endstops.hit_on_purpose();
+  endstops.not_homing();
+  
+  return G38_pass_fail;
+
+}
+
+// Custom G38.2
+inline void corner_finder_g38(){
+
+  //gcode_get_destination();
+  LOOP_XYZ(i) {
+    if (corner_finder_destination[i] != current_position[i]) {
+      const float v = corner_finder_destination[i];
+      //destination[i] = LOGICAL_TO_NATIVE(v, i);
+      destination[i] = (axis_relative_modes[i] || relative_mode)
+          ? current_position[i] + v
+          : LOGICAL_TO_NATIVE(v, i);
+    }
+    else
+      destination[i] = current_position[i];
+  }
+
+  setup_for_endstop_or_probe_move();
+
+  /*const bool probe_triggered = TEST(endstops.trigger_state(),
+      #if ENABLED(Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN)
+        Z_MIN
+      #else
+        Z_MIN_PROBE
+      #endif
+    );
+    */
+
+  // If any axis has enough movement, do the move
+  LOOP_XYZ(i)
+    if (ABS(destination[i] - current_position[i]) >= G38_MINIMUM_MOVE) {
+      feedrate_mm_s = (i != Z_AXIS) ? homing_feedrate((AxisEnum)i) / 3 : homing_feedrate((AxisEnum)i);
+      // If G38.2 fails throw an error
+      if (!corner_finder_g38_run_probe()) {
+        SERIAL_ERROR_START();
+        SERIAL_ERRORLNPGM("Failed to reach target");
+      }
+      break;
+    }
+
+  clean_up_after_endstop_or_probe_move();
+
+}
+
+// Custom G1
+inline void corner_finder_g1(){
+
+  if (IsRunning() && G0_G1_CONDITION) {
+    //gcode_get_destination();
+    LOOP_XYZ(i) {
+      if (corner_finder_destination[i] != current_position[i]) {
+        const float v = corner_finder_destination[i];
+        //destination[i] = LOGICAL_TO_NATIVE(v, i);
+        destination[i] = (axis_relative_modes[i] || relative_mode)
+          ? current_position[i] + v
+          : LOGICAL_TO_NATIVE(v, i);
+      }
+      else
+        destination[i] = current_position[i];
+    }
+
+    prepare_move_to_destination();
+    planner.synchronize();
+  }
+}
+
+
+
+// Custom g-code to do the Corner Finder routine
+/*inline void gcode_M490() {
+  
+  relative_mode = true;
+  
+  // g92 X0 Y0 Z0
+  corner_finder_destination[X_AXIS] = 0.0;
+  corner_finder_destination[Y_AXIS] = 0.0;
+  corner_finder_destination[Z_AXIS] = 0.0;
+  corner_finder_g92();
+
+  // PROBE Z
+  // G38.2 Z-20
+  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
+  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
+  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS] - 20.0;
+  corner_finder_g38();
+  planner.synchronize();
+
+  //G92 Z{probe_z_width}
+  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
+  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
+  corner_finder_destination[Z_AXIS] = probe_z_width;
+  corner_finder_g92();
+
+  //G1 Z5
+  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
+  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
+  corner_finder_destination[Z_AXIS] = probe_z_width + 5;
+  corner_finder_g1();
+  //G1 X-40
+  corner_finder_destination[X_AXIS] = -40;
+  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
+  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
+  corner_finder_g1();
+  //G1 Z-1
+  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
+  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
+  corner_finder_destination[Z_AXIS] = -1;
+  corner_finder_g1();
+
+  // PROBE X
+  // G38.2 X50
+  corner_finder_destination[X_AXIS] = current_position[X_AXIS] + 50;
+  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
+  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
+  corner_finder_g38();
+  planner.synchronize();
+
+  //G92 X-{probe_x_width + (bit_diameter / 2)}
+  corner_finder_destination[X_AXIS] = -1.00 * (probe_x_width + (bit_diameter / 2));
+  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
+  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
+  corner_finder_g92();
+
+  //G1 X-5
+  corner_finder_destination[X_AXIS] = -1 * probe_x_width - 5;
+  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
+  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
+  corner_finder_g1();
+  //G1 Y-40
+  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
+  corner_finder_destination[Y_AXIS] = -40;
+  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
+  corner_finder_g1();
+  //G1 X20
+  corner_finder_destination[X_AXIS] = probe_x_width + 15;
+  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
+  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
+  corner_finder_g1();
+
+  // PROBE Y
+  // G38.2 Y50
+  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
+  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS] + 50;
+  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
+  corner_finder_g38();
+  planner.synchronize();
+
+  //G92 X-{probe_y_width + (bit_diameter / 2)}
+  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
+  corner_finder_destination[Y_AXIS] = -1.00 * (probe_y_width + (bit_diameter / 2));
+  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
+  corner_finder_g92();
+
+  //G1 Y-5
+  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
+  corner_finder_destination[Y_AXIS] = -1 * probe_y_width - 5;
+  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
+  corner_finder_g1();
+  //G1 Z10
+  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
+  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
+  corner_finder_destination[Z_AXIS] = probe_z_width + 5;
+  corner_finder_g1();
+  
+  //G1 X0 Y0
+  corner_finder_destination[X_AXIS] = 0;
+  corner_finder_destination[Y_AXIS] = 0;
+  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
+  corner_finder_g1();
+  
+  relative_mode = false;
+
+}*/
+inline void gcode_M490() {
+  
+  relative_mode = true;
+  
+  // g92 X0 Y0 Z0
+  corner_finder_destination[X_AXIS] = 0.0;
+  corner_finder_destination[Y_AXIS] = 0.0;
+  corner_finder_destination[Z_AXIS] = 0.0;
+  corner_finder_g92();
+
+  // PROBE Z
+  // G38.2 Z-20
+  corner_finder_destination[X_AXIS] = 0;
+  corner_finder_destination[Y_AXIS] = 0;
+  corner_finder_destination[Z_AXIS] = -20.0;
+  corner_finder_g38();
+  planner.synchronize();
+
+  //G92 Z{probe_z_width}
+  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
+  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
+  corner_finder_destination[Z_AXIS] = probe_z_width;
+  corner_finder_g92();
+
+  //G1 Z5
+  corner_finder_destination[X_AXIS] = 0;
+  corner_finder_destination[Y_AXIS] = 0;
+  corner_finder_destination[Z_AXIS] = 5;
+  corner_finder_g1();
+  //G1 X-40
+  corner_finder_destination[X_AXIS] = -40;
+  corner_finder_destination[Y_AXIS] = 0;
+  corner_finder_destination[Z_AXIS] = 0;
+  corner_finder_g1();
+  //G1 Z-1
+  corner_finder_destination[X_AXIS] = 0;
+  corner_finder_destination[Y_AXIS] = 0;
+  corner_finder_destination[Z_AXIS] = -1 * probe_z_width - 5;
+  corner_finder_g1();
+
+  // PROBE X
+  // G38.2 X50
+  corner_finder_destination[X_AXIS] = 50;
+  corner_finder_destination[Y_AXIS] = 0;
+  corner_finder_destination[Z_AXIS] = 0;
+  corner_finder_g38();
+  planner.synchronize();
+
+  //G92 X-{probe_x_width + (bit_diameter / 2)}
+  corner_finder_destination[X_AXIS] = -1.00 * (probe_x_width + (bit_diameter / 2));
+  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
+  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
+  corner_finder_g92();
+
+  //G1 X-5
+  corner_finder_destination[X_AXIS] = -5;
+  corner_finder_destination[Y_AXIS] = 0;
+  corner_finder_destination[Z_AXIS] = 0;
+  corner_finder_g1();
+  //G1 Y-40
+  corner_finder_destination[X_AXIS] = 0;
+  corner_finder_destination[Y_AXIS] = -40;
+  corner_finder_destination[Z_AXIS] = 0;
+  corner_finder_g1();
+  //G1 X20
+  corner_finder_destination[X_AXIS] = probe_x_width + 15;
+  corner_finder_destination[Y_AXIS] = 0;
+  corner_finder_destination[Z_AXIS] = 0;
+  corner_finder_g1();
+
+  // PROBE Y
+  // G38.2 Y50
+  corner_finder_destination[X_AXIS] = 0;
+  corner_finder_destination[Y_AXIS] = 50;
+  corner_finder_destination[Z_AXIS] = 0;
+  corner_finder_g38();
+  planner.synchronize();
+
+  //G92 X-{probe_y_width + (bit_diameter / 2)}
+  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
+  corner_finder_destination[Y_AXIS] = -1.00 * (probe_y_width + (bit_diameter / 2));
+  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
+  corner_finder_g92();
+
+  //G1 Y-5
+  corner_finder_destination[X_AXIS] = 0;
+  corner_finder_destination[Y_AXIS] = -5;
+  corner_finder_destination[Z_AXIS] = 0;
+  corner_finder_g1();
+  //G1 Z10
+  corner_finder_destination[X_AXIS] = 0;
+  corner_finder_destination[Y_AXIS] = 0;
+  corner_finder_destination[Z_AXIS] = probe_z_width + 5;
+  corner_finder_g1();
+  
+  relative_mode = false;
+
+  //G1 X0 Y0
+  corner_finder_destination[X_AXIS] = 0;
+  corner_finder_destination[Y_AXIS] = 0;
+  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
+  corner_finder_g1();
+  
+  
+
+}
+/*****************************************/
+/*            End RootCNC                */
+/*****************************************/
+
+
+
 /**
  * Process the parsed command and dispatch it to its handler
  */
@@ -12992,7 +13372,8 @@ void process_parsed_command() {
       #if HAS_MESH
         case 421: gcode_M421(); break;                            // M421: Set a Mesh Z value
       #endif
-
+      
+      case 490: gcode_M490(); break;                              // M490: RootCNC. Probe to find origin at the corner of the material
       case 500: gcode_M500(); break;                              // M500: Store Settings in EEPROM
       case 501: gcode_M501(); break;                              // M501: Read Settings from EEPROM
       case 502: gcode_M502(); break;                              // M502: Revert Settings to defaults

@@ -195,6 +195,11 @@ uint16_t max_display_update_time = 0;
   void lcd_manual_tool_change();
   void lcd_manual_tool_change_step_1();
 
+  /// RootCNC
+  void lcd_corner_finder();
+  /// 
+  
+
   #if ENABLED(LCD_INFO_MENU)
     #if ENABLED(PRINTCOUNTER)
       void lcd_info_stats_menu();
@@ -2701,6 +2706,11 @@ void lcd_quick_feedback(const bool clear_buttons) {
     //MENU_ITEM(submenu, MSG_ZPROBE_ZOFFSET, lcd_z_offset);
 
     //
+    // Probe the corner of the material piece to find origin (0,0,0)
+    //
+    MENU_ITEM(submenu, MSG_CORNER_FINDER, lcd_corner_finder);
+
+    //
     // TMC Z Calibration
     //
     #if ENABLED(TMC_Z_CALIBRATION)
@@ -2839,69 +2849,6 @@ void lcd_quick_feedback(const bool clear_buttons) {
   }
 
   
-  void lcd_auto_home() {
-      START_MENU();
-      MENU_BACK(MSG_PREPARE);
-
-      MENU_ITEM(gcode, "Home All", PSTR("G28"));
-      MENU_ITEM(gcode, "Home X", PSTR("G28 X"));
-      MENU_ITEM(gcode, "Home Y", PSTR("G28 Y"));
-      MENU_ITEM(gcode, "Home Z", PSTR("G28 Z"));
-      
-      END_MENU();
-  }
-
-  /*void lcd_z_offset(){
-      if (lcd_clicked) { return lcd_goto_previous_menu(); }
-      ENCODER_DIRECTION_NORMAL();
-      if (encoderPosition) {
-        refresh_cmd_timeout();
-        const float scale = 0.1;
-        //For each step on the knob /hole step = 4
-        //if(encoderPosition % 4 == 0 && home_offset[Z_AXIS] + float((int32_t)encoderPosition) * scale >= 0){ //Only allow positive offset
-        if(home_offset[Z_AXIS] + float((int32_t)encoderPosition) * scale >= 0){ //Only allow positive offset
-          home_offset[Z_AXIS] += float((int32_t)encoderPosition) * scale;
-          current_position[Z_AXIS] += float((int32_t)encoderPosition) * scale;
-          encoderPosition = 0;
-        }
-        
-        lcdDrawUpdate = LCDVIEW_REDRAW_NOW;
-      }
-      if (lcdDrawUpdate) lcd_implementation_drawedit(PSTR("Offset [mm]"), ftostr32(home_offset[Z_AXIS]));
-
-  }*/
-
-
-
-  int16_t gbl_workarea_x = 150;
-  int16_t gbl_workarea_y = 100;
-  //int16_t gbl_workarea_division = 100;
-  
-  void _lcd_grid_bed_leveling_generate(){
-
-    char leveling_command[35];
-    //snprintf_P(leveling_command, sizeof(leveling_command), PSTR("G29 X%i Y%i L0 R%i F0 B%i T V4"), (int16_t) floor(gbl_workarea_x/gbl_workarea_division), (int16_t) floor(gbl_workarea_y/gbl_workarea_division), (int16_t) gbl_workarea_x, (int16_t) gbl_workarea_y);
-    snprintf_P(leveling_command, sizeof(leveling_command), PSTR("G29 L%i R%i F%i B%i T V4"), (int16_t) MIN_PROBE_EDGE, (int16_t) gbl_workarea_x - MIN_PROBE_EDGE, (int16_t) MIN_PROBE_EDGE, (int16_t) gbl_workarea_y - MIN_PROBE_EDGE);
-    enqueue_and_echo_command(leveling_command);
-    enqueue_and_echo_commands_P(PSTR("G1 X0 Y0"));
-    planner.synchronize();
-
-  }
-  
-  void lcd_grid_bed_leveling(){
-    START_MENU();
-    MENU_BACK(MSG_PREPARE);
-
-    ENCODER_DIRECTION_NORMAL();
-    MENU_ITEM_EDIT(int3, "W.Area X [mm]", &gbl_workarea_x, 10, X_BED_SIZE);
-    MENU_ITEM_EDIT(int3, "W.Area Y [mm]", &gbl_workarea_y, 10, Y_BED_SIZE);
-    //MENU_ITEM_EDIT(int3, "W.Division [mm]", &gbl_workarea_division, 1, min(gbl_workarea_x, gbl_workarea_y));
-    MENU_ITEM(function, "Probe bed", _lcd_grid_bed_leveling_generate);
-    
-    END_MENU();
-  }
-
-
   void lcd_manual_tool_change_step_1(){
     
     //refresh_cmd_timeout();  
@@ -2948,7 +2895,77 @@ void lcd_quick_feedback(const bool clear_buttons) {
     }
     //lcdDrawUpdate = LCDVIEW_CALL_REDRAW_NEXT;
   }
+  
 
+
+  /// RootCNC
+  int16_t gbl_workarea_x = 150;
+  int16_t gbl_workarea_y = 100;
+  float bit_diameter = CNC_BIT_DIAMETER;
+  float probe_x_width = CNC_PROBE_X_WIDTH;
+  float probe_y_width = CNC_PROBE_Y_WIDTH;
+  float probe_z_width = CNC_PROBE_Z_WIDTH;
+
+  void lcd_auto_home() {
+      START_MENU();
+      MENU_BACK(MSG_PREPARE);
+
+      MENU_ITEM(gcode, MSG_HOME_ALL, PSTR("G28"));
+      MENU_ITEM(gcode, MSG_AUTO_HOME_X, PSTR("G28 X"));
+      MENU_ITEM(gcode, MSG_AUTO_HOME_Y, PSTR("G28 Y"));
+      MENU_ITEM(gcode, MSG_AUTO_HOME_Z, PSTR("G28 Z"));
+      
+      END_MENU();
+  }
+
+  
+  inline void _lcd_corner_finder_probe_dimensions(){
+    
+    START_MENU();
+    MENU_BACK(MSG_CORNER_FINDER);
+    
+    MENU_ITEM_EDIT(float52, MSG_X_WIDTH, &probe_x_width, 0.0, 15.0);
+    MENU_ITEM_EDIT(float52, MSG_Y_WIDTH, &probe_y_width, 0.0, 15.0);
+    MENU_ITEM_EDIT(float52, MSG_Z_WIDTH, &probe_z_width, 0.0, 15.0);
+
+    END_MENU();
+  }
+  
+  inline void lcd_corner_finder(){
+    START_MENU();
+    MENU_BACK(MSG_PREPARE);
+    
+    ENCODER_DIRECTION_NORMAL();
+    MENU_ITEM(submenu, MSG_PROBE_DIMENSIONS, _lcd_corner_finder_probe_dimensions);
+    MENU_ITEM_EDIT(float52, MSG_BIT_DIAMETER, &bit_diameter, 0.00, 13.00);
+    MENU_ITEM(gcode, MSG_FIND_CORNER, PSTR("M490"));
+    
+    END_MENU();
+  }
+
+  
+  void _lcd_grid_bed_leveling_generate(){
+
+    char leveling_command[35];
+    snprintf_P(leveling_command, sizeof(leveling_command), PSTR("G29 L%i R%i F%i B%i T V4"), (int16_t) MIN_PROBE_EDGE, (int16_t) gbl_workarea_x - MIN_PROBE_EDGE, (int16_t) MIN_PROBE_EDGE, (int16_t) gbl_workarea_y - MIN_PROBE_EDGE);
+    enqueue_and_echo_command(leveling_command);
+    enqueue_and_echo_commands_P(PSTR("G1 X0 Y0"));
+    planner.synchronize();
+
+  }
+  
+  void lcd_grid_bed_leveling(){
+    START_MENU();
+    MENU_BACK(MSG_PREPARE);
+
+    ENCODER_DIRECTION_NORMAL();
+    MENU_ITEM_EDIT(int3, MSG_WORK_AREA_X, &gbl_workarea_x, 20, X_BED_SIZE);
+    MENU_ITEM_EDIT(int3, MSG_WORK_AREA_Y, &gbl_workarea_y, 20, Y_BED_SIZE);
+    MENU_ITEM(function, MSG_PROBE_BED, _lcd_grid_bed_leveling_generate);
+    
+    END_MENU();
+  }
+  /// end RootCNC
 
 
   float move_menu_scale;

@@ -262,4 +262,12 @@
   void lcd_reselect_last_file();
 #endif
 
+extern int16_t gbl_workarea_x;
+extern int16_t gbl_workarea_y;
+extern float bit_diameter;
+extern float probe_x_width;
+extern float probe_y_width;
+extern float probe_z_width;
+
+
 #endif // ULTRALCD_H

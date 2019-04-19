@@ -1084,4 +1084,41 @@
   #endif
 #endif // LCD_HEIGHT < 4
 
+
+//RootCNC
+#ifndef MSG_PROBE_BED
+  #define MSG_PROBE_BED                     _UxGT("Probe bed")
+#endif
+#ifndef MSG_WORK_AREA_X
+  #define MSG_WORK_AREA_X                   _UxGT("Work area X")
+#endif
+#ifndef MSG_WORK_AREA_Y
+  #define MSG_WORK_AREA_Y                   _UxGT("Work area Y")
+#endif
+#ifndef MSG_HOME_ALL
+  #define MSG_HOME_ALL                      _UxGT("Home all")
+#endif
+#ifndef MSG_CORNER_FINDER
+  #define MSG_CORNER_FINDER                 _UxGT("Corner Finder")
+#endif
+#ifndef MSG_BIT_DIAMETER
+  #define MSG_BIT_DIAMETER                  _UxGT("Bit diameter")
+#endif
+#ifndef MSG_PROBE_DIMENSIONS
+  #define MSG_PROBE_DIMENSIONS              _UxGT("Probe dimensions")
+#endif
+#ifndef MSG_X_WIDTH
+  #define MSG_X_WIDTH                       _UxGT("X Width")
+#endif
+#ifndef MSG_Y_WIDTH
+  #define MSG_Y_WIDTH                       _UxGT("Y Width")
+#endif
+#ifndef MSG_Z_WIDTH
+  #define MSG_Z_WIDTH                       _UxGT("Z Width")
+#endif
+#ifndef MSG_FIND_CORNER
+  #define MSG_FIND_CORNER                   _UxGT("Find corner")
+#endif
+/// end RootCNC
+
 #endif // LANGUAGE_EN_H
