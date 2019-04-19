@@ -12789,111 +12789,16 @@ inline void corner_finder_g1(){
 
 
 // Custom g-code to do the Corner Finder routine
-/*inline void gcode_M490() {
-  
-  relative_mode = true;
-  
-  // g92 X0 Y0 Z0
-  corner_finder_destination[X_AXIS] = 0.0;
-  corner_finder_destination[Y_AXIS] = 0.0;
-  corner_finder_destination[Z_AXIS] = 0.0;
-  corner_finder_g92();
-
-  // PROBE Z
-  // G38.2 Z-20
-  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
-  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
-  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS] - 20.0;
-  corner_finder_g38();
-  planner.synchronize();
-
-  //G92 Z{probe_z_width}
-  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
-  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
-  corner_finder_destination[Z_AXIS] = probe_z_width;
-  corner_finder_g92();
-
-  //G1 Z5
-  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
-  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
-  corner_finder_destination[Z_AXIS] = probe_z_width + 5;
-  corner_finder_g1();
-  //G1 X-40
-  corner_finder_destination[X_AXIS] = -40;
-  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
-  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
-  corner_finder_g1();
-  //G1 Z-1
-  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
-  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
-  corner_finder_destination[Z_AXIS] = -1;
-  corner_finder_g1();
-
-  // PROBE X
-  // G38.2 X50
-  corner_finder_destination[X_AXIS] = current_position[X_AXIS] + 50;
-  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
-  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
-  corner_finder_g38();
-  planner.synchronize();
-
-  //G92 X-{probe_x_width + (bit_diameter / 2)}
-  corner_finder_destination[X_AXIS] = -1.00 * (probe_x_width + (bit_diameter / 2));
-  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
-  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
-  corner_finder_g92();
-
-  //G1 X-5
-  corner_finder_destination[X_AXIS] = -1 * probe_x_width - 5;
-  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
-  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
-  corner_finder_g1();
-  //G1 Y-40
-  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
-  corner_finder_destination[Y_AXIS] = -40;
-  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
-  corner_finder_g1();
-  //G1 X20
-  corner_finder_destination[X_AXIS] = probe_x_width + 15;
-  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
-  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
-  corner_finder_g1();
-
-  // PROBE Y
-  // G38.2 Y50
-  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
-  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS] + 50;
-  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
-  corner_finder_g38();
-  planner.synchronize();
-
-  //G92 X-{probe_y_width + (bit_diameter / 2)}
-  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
-  corner_finder_destination[Y_AXIS] = -1.00 * (probe_y_width + (bit_diameter / 2));
-  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
-  corner_finder_g92();
-
-  //G1 Y-5
-  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
-  corner_finder_destination[Y_AXIS] = -1 * probe_y_width - 5;
-  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
-  corner_finder_g1();
-  //G1 Z10
-  corner_finder_destination[X_AXIS] = current_position[X_AXIS];
-  corner_finder_destination[Y_AXIS] = current_position[Y_AXIS];
-  corner_finder_destination[Z_AXIS] = probe_z_width + 5;
-  corner_finder_g1();
-  
-  //G1 X0 Y0
-  corner_finder_destination[X_AXIS] = 0;
-  corner_finder_destination[Y_AXIS] = 0;
-  corner_finder_destination[Z_AXIS] = current_position[Z_AXIS];
-  corner_finder_g1();
-  
-  relative_mode = false;
-
-}*/
 inline void gcode_M490() {
+  
+  lcd_reset_status();
+
+  if(current_position[X_AXIS] < 40 || current_position[Y_AXIS] < 40){
+    SERIAL_ERROR_START();
+    SERIAL_ERRORLNPGM("Move 40mm from HOME");
+    lcd_setalertstatusPGM(PSTR("Move 40mm from HOME"));
+    return;
+  }
   
   relative_mode = true;
   
